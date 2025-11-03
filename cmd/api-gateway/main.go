@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	// authHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
+	AuthHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
 	healthHandler "github.com/oogway93/taskmanager/internal/api-gateway/health"
 )
 
@@ -23,16 +24,21 @@ func main() {
 	logger.Init(cfg)
 	defer logger.Sync()
 
-
-	// Настройка Gin
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
-
+	authHandler, err := AuthHandler.NewHandler(cfg)
+	if err != nil {
+		logger.Log.Fatal("Failed to create auth handler", zap.Error(err))
+	}
+	defer authHandler.Close()
 	router := gin.Default()
 	public := router.Group("/api/v1")
 	{
 		public.GET("/health", healthHandler.HealthCheck)
+		public.POST("/auth/login", healthHandler.HealthCheck)
+		public.POST("/auth/registration", authHandler.Register)
+		public.GET("/auth/logout", healthHandler.HealthCheck)
 	}
 	// protected := router.Group("/api/v1") //TODO: написать protected routes, защищенные middleware через JWT token
 	// router.Use(middleware.Auth())
@@ -73,5 +79,4 @@ func main() {
 	}
 
 	logger.Log.Info("✅ Server exited properly")
-
 }

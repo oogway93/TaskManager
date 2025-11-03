@@ -1,0 +1,38 @@
+syntax="proto3";
+
+option go_package="gen/auth";
+
+import "google/protobuf/timestamp.proto";
+
+service AuthService {
+  // Регистрация нового пользователя
+    rpc Register(RegisterRequest) returns (RegisterResponse) {}
+}
+
+// Сообщения для регистрации
+message RegisterRequest {
+    string email = 1;
+    string password = 2;
+    string name = 3;
+}
+
+message RegisterResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+    string token_type = 3;
+    google.protobuf.Timestamp expires_at = 4;
+    User user = 5;
+}
+
+// Основные модели данных
+message User {
+    string id = 1;
+    string email = 2;
+    string name = 3;
+    string role = 4;
+    bool active = 5;
+    bool email_verified = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+    google.protobuf.Timestamp last_login_at = 9;
+}

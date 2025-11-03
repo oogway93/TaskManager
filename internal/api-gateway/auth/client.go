@@ -1,0 +1,58 @@
+package auth
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/oogway93/taskmanager/gen/auth"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+type Client struct {
+	conn   *grpc.ClientConn
+	client auth.AuthServiceClient
+}
+
+// NewClient создает новый клиент для работы с Auth Service
+func NewClient(serverAddr string) (*Client, error) {
+	conn, err := grpc.NewClient(serverAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to auth service: %w", err)
+	}
+
+	return &Client{
+		conn:   conn,
+		client: auth.NewAuthServiceClient(conn),
+	}, nil
+}
+
+// Close закрывает соединение с сервером
+func (c *Client) Close() error {
+	if c.conn != nil {
+		return c.conn.Close()
+	}
+	return nil
+}
+
+// Register регистрирует нового пользователя
+func (c *Client) Register(email, password, name string) (*auth.RegisterResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	req := &auth.RegisterRequest{
+		Email:    email,
+		Password: password,
+		Name:     name,
+	}
+
+	resp, err := c.client.Register(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}

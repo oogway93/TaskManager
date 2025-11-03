@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 type Config struct {
 	Server ServerConfig
-	App App
+	App    App
+	JWT    JWTConfig
+	DB     DBConfig
 }
 
 type App struct {
@@ -20,6 +23,21 @@ type ServerConfig struct {
 	Port int
 }
 
+type JWTConfig struct {
+	Secret     string
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
+	Issuer     string
+}
+
+type DBConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+}
+
 func Load() *Config {
 	return &Config{
 		ServerConfig{
@@ -28,6 +46,18 @@ func Load() *Config {
 		},
 		App{
 			Env: getEnv("APP_ENV", "development"),
+		},
+		JWTConfig{
+			Secret:     getEnv("JWT_SECRET", "asd"),
+			AccessTTL:  time.Duration(getEnvInt("JWT_ACCESS_TTL", 15)) * time.Minute,
+			RefreshTTL: time.Duration(getEnvInt("JWT_REFRESH_TTL", 720)) * time.Hour,
+		},
+		DBConfig{
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnvInt("DB_PORT", 5432),
+			User:     getEnv("DB_USER", "postgres"),
+			Password: getEnv("DB_PASSWORD", "postgres"), //TODO:настроить конфиг, почему то берет за дефолт значение(видимо не видит из .env)
+			DBName:   getEnv("DB_NAME", "taskmanager"),
 		},
 	}
 }
@@ -54,4 +84,28 @@ func (c *Config) GetServerAddress() string {
 
 func (c *Config) IsProduction() bool {
 	return c.App.Env == "production"
+}
+
+func (c *Config) GetJWTSecret() string {
+	return c.JWT.Secret
+}
+
+func (c *Config) GetJWTAccessTTL() time.Duration {
+	return c.JWT.AccessTTL
+}
+
+func (c *Config) GetJWTRefreshTTL() time.Duration {
+	return c.JWT.RefreshTTL
+}
+func (c *Config) GetDBConnectionString() string {
+	return "host=" + c.DB.Host +
+		" port=" + strconv.Itoa(c.DB.Port) +
+		" user=" + c.DB.User +
+		" password=" + c.DB.Password +
+		" dbname=" + c.DB.DBName +
+		" sslmode=disable"
+}
+
+func (c *Config) GetGRPCAddress() string {
+	return getEnv("GRPC_HOST", "localhost") + ":" + strconv.Itoa(getEnvInt("GRPC_PORT", 50051))
 }

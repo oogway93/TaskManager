@@ -15,11 +15,7 @@ func Init(cfg *config.Config) {
 		Log, err = zap.NewProduction() // JSON Output
 	} else {
 		config := zap.NewDevelopmentConfig() // Pretty Output
-
-		// Включаем цветной вывод для уровней
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-
-		// Включаем цветной вывод для времени (опционально)
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 		var err error
