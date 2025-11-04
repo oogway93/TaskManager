@@ -13,7 +13,6 @@ import (
 	"github.com/oogway93/taskmanager/logger"
 	"go.uber.org/zap"
 
-	// authHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
 	AuthHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
 	healthHandler "github.com/oogway93/taskmanager/internal/api-gateway/health"
 )
@@ -36,7 +35,7 @@ func main() {
 	public := router.Group("/api/v1")
 	{
 		public.GET("/health", healthHandler.HealthCheck)
-		public.POST("/auth/login", healthHandler.HealthCheck)
+		public.POST("/auth/login", authHandler.Login)
 		public.POST("/auth/registration", authHandler.Register)
 		public.GET("/auth/logout", healthHandler.HealthCheck)
 	}

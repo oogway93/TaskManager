@@ -2,9 +2,12 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -39,6 +42,10 @@ type DBConfig struct {
 }
 
 func Load() *Config {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	return &Config{
 		ServerConfig{
 			Host: getEnv("SERVER_HOST", "localhost"),
@@ -56,7 +63,7 @@ func Load() *Config {
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnvInt("DB_PORT", 5432),
 			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", "postgres"), //TODO:настроить конфиг, почему то берет за дефолт значение(видимо не видит из .env)
+			Password: getEnv("DB_PASSWORD", "password"), 
 			DBName:   getEnv("DB_NAME", "taskmanager"),
 		},
 	}

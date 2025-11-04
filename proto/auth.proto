@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 service AuthService {
   // Регистрация нового пользователя
     rpc Register(RegisterRequest) returns (RegisterResponse) {}
+    rpc Login(LoginRequest) returns (LoginResponse) {}
 }
 
 // Сообщения для регистрации
@@ -17,6 +18,19 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+    string token_type = 3;
+    google.protobuf.Timestamp expires_at = 4;
+    User user = 5;
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginResponse {
     string access_token = 1;
     string refresh_token = 2;
     string token_type = 3;

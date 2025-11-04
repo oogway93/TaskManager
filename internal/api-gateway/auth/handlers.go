@@ -79,6 +79,41 @@ func (h *Handler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
+func (h *Handler) Login(c *gin.Context) {
+	var req entity.LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println("Invalid login request:::", err)
+
+		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
+			Error:   "VALIDATION_ERROR",
+			Message: "Invalid request data",
+		})
+		return
+	}
+
+	resp, err := h.authClient.Login(req.Email, req.Password)
+	if err != nil {
+		// h.handleGRPCError(c, err)
+		return
+	}
+
+	response := entity.LoginResponse{
+		AccessToken:  resp.AccessToken,
+		RefreshToken: resp.RefreshToken,
+		TokenType:    resp.TokenType,
+		ExpiresAt:    resp.ExpiresAt.AsTime(),
+		User: entity.UserResponse{
+			ID:        resp.User.Id,
+			Email:     resp.User.Email,
+			Name:      resp.User.Name,
+			Role:      resp.User.Role,
+			CreatedAt: resp.User.CreatedAt.AsTime(),
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 func (h *Handler) Close() {
 	h.authClient.Close()
 }

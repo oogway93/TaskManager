@@ -14,23 +14,24 @@ var (
 	ErrUserNotFound       = errors.New("user not found")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserAlreadyExists  = errors.New("user already exists")
+	ErrUserInactive       = errors.New("user is already inactive ")
 )
 
 type AuthService interface {
 	Register(ctx context.Context, email, password, name string) (*entity.User, error)
-	// Login(ctx context.Context, email, password string) (*entity.User, error)
+	Login(ctx context.Context, email, password string) (*entity.User, error)
 	// GetUserByID(ctx context.Context, userID string) (*entity.User, error)
 	// UpdateUserProfile(ctx context.Context, userID, email, name string) (*entity.User, error)
 }
 
 type authService struct {
-	userRepo repository.UserRepository
+	userRepo     repository.UserRepository
 	tokenService TokenService
 }
 
 func NewAuthService(userRepo repository.UserRepository, tokenService TokenService) AuthService {
 	return &authService{
-		userRepo: userRepo,
+		userRepo:     userRepo,
 		tokenService: tokenService,
 	}
 }
@@ -64,6 +65,34 @@ func (s *authService) Register(ctx context.Context, email, password, name string
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
 	}
+
+	return user, nil
+}
+
+func (s *authService) Login(ctx context.Context, email, password string) (*entity.User, error) {
+	// Получаем пользователя по email
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	// Проверяем пароль
+	if !checkPassword(user.Password, password) {
+		return nil, ErrInvalidCredentials
+	}
+
+	// Проверяем активность аккаунта
+	if !user.Active {
+		return nil, errors.New("account is deactivated")
+	}
+
+	// Обновляем время последнего входа (опционально)
+	user.UpdatedAt = time.Now()
+	// if err := s.userRepo.Update(ctx, user); err != nil {
+	// 	// Логируем ошибку, но не прерываем вход
+	// 	// logger.WithError(err).Warn("Failed to update last login time")
+	// 	log.Println("Failed to update last login time")
+	// }
 
 	return user, nil
 }

@@ -56,3 +56,21 @@ func (c *Client) Register(email, password, name string) (*auth.RegisterResponse,
 
 	return resp, nil
 }
+
+func (c *Client) Login(email, password string) (*auth.LoginResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	req := &auth.LoginRequest{
+		Email:    email,
+		Password: password,
+	}
+
+	resp, err := c.client.Login(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
