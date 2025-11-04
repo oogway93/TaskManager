@@ -16,7 +16,7 @@ var (
 
 type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
-	// GetByID(ctx context.Context, userID string) (*service.User, error)
+	GetByID(ctx context.Context, userID string) (*entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	// Update(ctx context.Context, user *service.User) error
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
@@ -72,6 +72,35 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 
 	var user entity.User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Password,
+		&user.Name,
+		&user.Role,
+		&user.Active,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) GetByID(ctx context.Context, userID string) (*entity.User, error) {
+	query := `
+		SELECT id, email, password_hash, name, role, active, created_at, updated_at
+		FROM users 
+		WHERE id = $1 AND active = true
+	`
+
+	var user entity.User
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&user.ID,
 		&user.Email,
 		&user.Password,

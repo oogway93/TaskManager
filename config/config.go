@@ -113,6 +113,10 @@ func (c *Config) GetDBConnectionString() string {
 		" sslmode=disable"
 }
 
+func (c *Config) GetAuthServiceURL() string {
+	return c.GetGRPCAddress()
+}
+
 func (c *Config) GetGRPCAddress() string {
 	return getEnv("GRPC_HOST", "localhost") + ":" + strconv.Itoa(getEnvInt("GRPC_PORT", 50051))
 }

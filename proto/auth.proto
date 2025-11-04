@@ -8,6 +8,8 @@ service AuthService {
   // Регистрация нового пользователя
     rpc Register(RegisterRequest) returns (RegisterResponse) {}
     rpc Login(LoginRequest) returns (LoginResponse) {}
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {}
+    rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse) {}
 }
 
 // Сообщения для регистрации
@@ -23,6 +25,25 @@ message RegisterResponse {
     string token_type = 3;
     google.protobuf.Timestamp expires_at = 4;
     User user = 5;
+}
+
+message ValidateTokenRequest {
+    string token = 1;
+}
+
+message ValidateTokenResponse {
+    bool valid = 1;
+    string user_id = 2;
+    string email = 3;
+    string role = 4;
+}
+
+message GetUserProfileRequest {
+    string user_id = 1;
+}
+
+message GetUserProfileResponse {
+    User user = 1;
 }
 
 message LoginRequest {

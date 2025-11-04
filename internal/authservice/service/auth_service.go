@@ -20,7 +20,8 @@ var (
 type AuthService interface {
 	Register(ctx context.Context, email, password, name string) (*entity.User, error)
 	Login(ctx context.Context, email, password string) (*entity.User, error)
-	// GetUserByID(ctx context.Context, userID string) (*entity.User, error)
+	ValidateToken(token string) (*TokenClaims, error)
+	GetUserByID(ctx context.Context, userID string) (*entity.User, error)
 	// UpdateUserProfile(ctx context.Context, userID, email, name string) (*entity.User, error)
 }
 
@@ -95,6 +96,14 @@ func (s *authService) Login(ctx context.Context, email, password string) (*entit
 	// }
 
 	return user, nil
+}
+
+func (s *authService) ValidateToken(token string) (*TokenClaims, error) {
+	return s.tokenService.ValidateToken(token)
+}
+
+func (s *authService) GetUserByID(ctx context.Context, userID string) (*entity.User, error) {
+	return s.userRepo.GetByID(ctx, userID)
 }
 
 func hashPassword(userPassword string) ([]byte, error) {

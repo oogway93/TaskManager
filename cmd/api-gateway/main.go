@@ -8,8 +8,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/oogway93/taskmanager/config"
+	"github.com/oogway93/taskmanager/internal/api-gateway"
 	"github.com/oogway93/taskmanager/logger"
 	"go.uber.org/zap"
 
@@ -23,6 +25,8 @@ func main() {
 	logger.Init(cfg)
 	defer logger.Sync()
 
+	jwtConfig := middlewares.NewJWTConfig(cfg)
+
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -32,15 +36,21 @@ func main() {
 	}
 	defer authHandler.Close()
 	router := gin.Default()
+	router.Use(cors.Default())
+
+	router.Use(middlewares.JWTMiddleware(jwtConfig))
+
 	public := router.Group("/api/v1")
 	{
 		public.GET("/health", healthHandler.HealthCheck)
 		public.POST("/auth/login", authHandler.Login)
 		public.POST("/auth/registration", authHandler.Register)
-		public.GET("/auth/logout", healthHandler.HealthCheck)
 	}
-	// protected := router.Group("/api/v1") //TODO: написать protected routes, защищенные middleware через JWT token
-	// router.Use(middleware.Auth())
+
+	protected := router.Group("/api/v1")
+	{
+		protected.GET("/auth/profile", authHandler.GetProfile)
+	}
 
 	server := &http.Server{
 		Addr:         cfg.GetServerAddress(),
@@ -55,7 +65,7 @@ func main() {
 		logger.Log.Info("🚀 API Gateway started on:", zap.String("address", cfg.GetServerAddress()))
 		logger.Log.Info("📊 Environment:", zap.String("env", cfg.App.Env))
 		// log.Printf("🔗 Task Service: %s", cfg.TaskServiceURL) //TODO:подключить task и auth service в логи
-		// log.Printf("🔗 Auth Service: %s", cfg.AuthServiceURL)
+		logger.Log.Info("🔗 Auth Service:", zap.String("Auth Service URL", cfg.GetAuthServiceURL()))
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Log.Error("Failed to start server", zap.Error(err))

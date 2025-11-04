@@ -117,3 +117,34 @@ func (s *AuthServer) Login(ctx context.Context, req *auth.LoginRequest) (*auth.L
 		User:         s.userToProto(user),
 	}, nil
 }
+
+func (s *AuthServer) ValidateToken(ctx context.Context, req *auth.ValidateTokenRequest) (*auth.ValidateTokenResponse, error) {
+	claims, err := s.authService.ValidateToken(req.Token)
+	if err != nil {
+		return &auth.ValidateTokenResponse{Valid: false}, nil
+	}
+
+	// Проверяем что пользователь все еще существует и активен
+	user, err := s.authService.GetUserByID(ctx, claims.UserID)
+	if err != nil || !user.Active {
+		return &auth.ValidateTokenResponse{Valid: false}, nil
+	}
+
+	return &auth.ValidateTokenResponse{
+		Valid:  true,
+		UserId: claims.UserID,
+		Email:  claims.Email,
+		Role:   claims.Role,
+	}, nil
+}
+
+func (s *AuthServer) GetUserProfile(ctx context.Context, req *auth.GetUserProfileRequest) (*auth.GetUserProfileResponse, error) {
+	user, err := s.authService.GetUserByID(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "user not found")
+	}
+
+	return &auth.GetUserProfileResponse{
+		User: s.userToProto(user),
+	}, nil
+}

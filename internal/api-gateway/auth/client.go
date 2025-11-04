@@ -74,3 +74,37 @@ func (c *Client) Login(email, password string) (*auth.LoginResponse, error) {
 	return resp, nil
 }
 
+func (c *Client) ValidateToken(token string) (*auth.ValidateTokenResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req := &auth.ValidateTokenRequest{
+		Token: token,
+	}
+
+	resp, err := c.client.ValidateToken(ctx, req)
+	if err != nil {
+		return nil, err
+		// return nil, wrapGRPCError(err)
+	}
+
+	return resp, nil
+}
+
+func (c *Client) GetUserProfile(userID string) (*auth.GetUserProfileResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req := &auth.GetUserProfileRequest{
+		UserId: userID,
+	}
+
+	resp, err := c.client.GetUserProfile(ctx, req)
+	if err != nil {
+		// return nil, wrapGRPCError(err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+

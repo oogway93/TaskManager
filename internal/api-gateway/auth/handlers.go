@@ -14,6 +14,10 @@ type Handler struct {
 	cfg        *config.Config
 }
 
+func (h *Handler) AuthClient() {
+	panic("unimplemented")
+}
+
 func NewHandler(cfg *config.Config) (*Handler, error) {
 	client, err := NewClient(cfg.GetGRPCAddress())
 	if err != nil {
@@ -58,7 +62,7 @@ func (h *Handler) Register(c *gin.Context) {
 
 	// Преобразование gRPC ответа в HTTP ответ
 	response := entity.RegisterResponse{
-		AccessToken:  resp.AccessToken,
+		AccessToken:  resp.AccessToken, //TODO:убрать вывод обратно пользователю и генерацию токена при регистрации
 		RefreshToken: resp.RefreshToken,
 		TokenType:    resp.TokenType,
 		ExpiresAt:    resp.ExpiresAt.AsTime(),
@@ -109,6 +113,33 @@ func (h *Handler) Login(c *gin.Context) {
 			Role:      resp.User.Role,
 			CreatedAt: resp.User.CreatedAt.AsTime(),
 		},
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) GetProfile(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, entity.ErrorResponse{
+			Error:   "Unauthorized",
+			Message: "User not authenticated",
+		})
+		return
+	}
+
+	resp, err := h.authClient.GetUserProfile(userID.(string))
+	if err != nil {
+		// h.handleGRPCError(c, err)
+		return
+	}
+
+	response := entity.UserResponse{
+		ID:        resp.User.Id,
+		Email:     resp.User.Email,
+		Name:      resp.User.Name,
+		Role:      resp.User.Role,
+		CreatedAt: resp.User.CreatedAt.AsTime(),
 	}
 
 	c.JSON(http.StatusOK, response)
