@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/oogway93/taskmanager/gen/task"
+	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -28,3 +29,6 @@ func NewClient(serverAddr string) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) CreateTask(taskReq entity.TaskRequest) (*task.TaskResponse, error) {
+	return nil, nil
+}

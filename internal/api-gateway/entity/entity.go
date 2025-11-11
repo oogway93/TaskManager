@@ -1,6 +1,8 @@
 package entity
 
-import "time"
+import (
+	"time"
+)
 
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
@@ -60,4 +62,24 @@ type ErrorResponse struct {
 	Error   string `json:"error"`
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
+}
+
+type Task struct {
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Priority    string   `json:"priority"` //TODO:сделать enum, чтобы проверялось правильность введения
+	Status      string   `json:"status"`
+	Tags        []string `json:"tags"`
+}
+
+type TaskRequest struct {
+	Task Task
+}
+
+type TaskResponse struct {
+	ID        string    `json:"id"`
+	Task      Task      `json:"task"`
+	User_id   string    `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
