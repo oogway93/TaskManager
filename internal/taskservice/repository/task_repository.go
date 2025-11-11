@@ -1,8 +1,13 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
 )
 
 var (
@@ -26,29 +31,29 @@ func NewTaskRepository(db *sql.DB) TaskRepository {
 	return &taskRepository{db: db}
 }
 
-// func (r *taskRepository) Create(ctx context.Context, user *entity.User) error {
-// 	query := `
-// 		INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
-// 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-// 	` //TODO: убрать raw sql, использовать gORM
+func (r *taskRepository) Create(ctx context.Context, task *entity.Task) error {
+	query := `
+		INSERT INTO tasks (id, title, email,  created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+	` //TODO: убрать raw sql, использовать gORM
 
-// 	user.ID = uuid.New().String()
-// 	user.CreatedAt = time.Now()
-// 	user.UpdatedAt = time.Now()
+	task.ID = uuid.New().String()
+	task.CreatedAt = time.Now()
+	task.UpdatedAt = time.Now()
 
-// 	_, err := r.db.ExecContext(ctx, query,
-// 		user.ID,
-// 		user.Email,
-// 		user.Password, // уже захэшированный пароль
-// 		user.Name,
-// 		user.Role,
-// 		user.Active,
-// 		user.CreatedAt,
-// 		user.UpdatedAt,
-// 	)
+	_, err := r.db.ExecContext(ctx, query,
+		user.ID,
+		user.Email,
+		user.Password, // уже захэшированный пароль
+		user.Name,
+		user.Role,
+		user.Active,
+		user.CreatedAt,
+		user.UpdatedAt,
+	)
 
-// 	return err
-// }
+	return err
+}
 
 // // ExistsByEmail проверяет существование пользователя с email
 // func (r *taskRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
