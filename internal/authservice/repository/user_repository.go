@@ -34,8 +34,8 @@ func NewUserRepository(db *sql.DB) UserRepository {
 func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	query := `
 		INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+	` //TODO: убрать raw sql, использовать gORM 
 
 	user.ID = uuid.New().String()
 	user.CreatedAt = time.Now()

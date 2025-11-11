@@ -14,10 +14,6 @@ type Handler struct {
 	cfg        *config.Config
 }
 
-func (h *Handler) AuthClient() {
-	panic("unimplemented")
-}
-
 func NewHandler(cfg *config.Config) (*Handler, error) {
 	client, err := NewClient(cfg.GetGRPCAddress())
 	if err != nil {
