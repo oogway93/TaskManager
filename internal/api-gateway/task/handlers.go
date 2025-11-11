@@ -8,7 +8,7 @@ type Handler struct {
 }
 
 func NewHandler(cfg *config.Config) (*Handler, error) {
-	client, err := NewClient(cfg.GetGRPCAddress())
+	client, err := NewClient(cfg.GetTaskGRPCAddress())
 	if err != nil {
 		return nil, err
 	}

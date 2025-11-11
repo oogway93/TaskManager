@@ -41,13 +41,13 @@ func main() {
 	auth.RegisterAuthServiceServer(grpcServer, authServer)
 
 	// Start gRPC server
-	lis, err := net.Listen("tcp", cfg.GetGRPCAddress())
+	lis, err := net.Listen("tcp", cfg.GetAuthGRPCAddress())
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
 	go func() {
-		log.Printf("Auth Service started on %s", cfg.GetGRPCAddress())
+		log.Printf("Auth Service started on %s", cfg.GetAuthGRPCAddress())
 		log.Printf("Environment: %s", cfg.App.Env)
 		log.Printf("JWT Access TTL: %v", cfg.JWT.AccessTTL)
 		

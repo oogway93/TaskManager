@@ -114,9 +114,17 @@ func (c *Config) GetDBConnectionString() string {
 }
 
 func (c *Config) GetAuthServiceURL() string {
-	return c.GetGRPCAddress()
+	return c.GetAuthGRPCAddress()
 }
 
-func (c *Config) GetGRPCAddress() string {
-	return getEnv("GRPC_HOST", "localhost") + ":" + strconv.Itoa(getEnvInt("GRPC_PORT", 50051))
+func (c *Config) GetTaskServiceURL() string {
+	return c.GetTaskGRPCAddress()
+}
+
+func (c *Config) GetTaskGRPCAddress() string {
+	return getEnv("Task_GRPC_HOST", "localhost") + ":" + strconv.Itoa(getEnvInt("Task_GRPC_PORT", 50052))
+}
+
+func (c *Config) GetAuthGRPCAddress() string {
+	return getEnv("Auth_GRPC_HOST", "localhost") + ":" + strconv.Itoa(getEnvInt("Auth_GRPC_PORT", 50051))
 }
