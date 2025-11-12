@@ -10,7 +10,7 @@ import (
 )
 
 type Handler struct {
-	authClient *Client
+	AuthClient *Client
 	cfg        *config.Config
 }
 
@@ -21,7 +21,7 @@ func NewHandler(cfg *config.Config) (*Handler, error) {
 	}
 
 	return &Handler{
-		authClient: client,
+		AuthClient: client,
 		cfg:        cfg,
 	}, nil
 }
@@ -50,7 +50,7 @@ func (h *Handler) Register(c *gin.Context) {
 	// }
 
 	// Вызов gRPC сервиса аутентификации
-	resp, err := h.authClient.Register(req.Email, req.Password, req.Name)
+	resp, err := h.AuthClient.Register(req.Email, req.Password, req.Name)
 	if err != nil {
 		// h.handleGRPCError(c, err)
 		return
@@ -91,7 +91,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.authClient.Login(req.Email, req.Password)
+	resp, err := h.AuthClient.Login(req.Email, req.Password)
 	if err != nil {
 		// h.handleGRPCError(c, err)
 		return
@@ -124,7 +124,7 @@ func (h *Handler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.authClient.GetUserProfile(userID.(string))
+	resp, err := h.AuthClient.GetUserProfile(userID.(string))
 	if err != nil {
 		// h.handleGRPCError(c, err)
 		return
@@ -142,5 +142,5 @@ func (h *Handler) GetProfile(c *gin.Context) {
 }
 
 func (h *Handler) Close() {
-	h.authClient.Close()
+	h.AuthClient.Close()
 }

@@ -131,8 +131,8 @@ type Task struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Priority      TaskPriorities         `protobuf:"varint,4,opt,name=priority,proto3,enum=TaskPriorities" json:"priority,omitempty"`
-	Status        TaskStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=TaskStatus" json:"status,omitempty"`
+	Priority      string                 `protobuf:"bytes,4,opt,name=priority,proto3" json:"priority,omitempty"`
+	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	UserId        string                 `protobuf:"bytes,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
@@ -193,18 +193,18 @@ func (x *Task) GetDescription() string {
 	return ""
 }
 
-func (x *Task) GetPriority() TaskPriorities {
+func (x *Task) GetPriority() string {
 	if x != nil {
 		return x.Priority
 	}
-	return TaskPriorities_LOW
+	return ""
 }
 
-func (x *Task) GetStatus() TaskStatus {
+func (x *Task) GetStatus() string {
 	if x != nil {
 		return x.Status
 	}
-	return TaskStatus_PENDING
+	return ""
 }
 
 func (x *Task) GetUserId() string {
@@ -246,7 +246,7 @@ type CreateTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Priority      TaskPriorities         `protobuf:"varint,3,opt,name=priority,proto3,enum=TaskPriorities" json:"priority,omitempty"`
+	Priority      string                 `protobuf:"bytes,3,opt,name=priority,proto3" json:"priority,omitempty"`
 	UserId        string                 `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	DueDate       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=due_date,json=dueDate,proto3" json:"due_date,omitempty"`
 	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
@@ -298,11 +298,11 @@ func (x *CreateTaskRequest) GetDescription() string {
 	return ""
 }
 
-func (x *CreateTaskRequest) GetPriority() TaskPriorities {
+func (x *CreateTaskRequest) GetPriority() string {
 	if x != nil {
 		return x.Priority
 	}
-	return TaskPriorities_LOW
+	return ""
 }
 
 func (x *CreateTaskRequest) GetUserId() string {
@@ -520,7 +520,7 @@ type UpdateTaskRequest struct {
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Status        TaskStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=TaskStatus" json:"status,omitempty"`
+	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	DueDate       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=due_date,json=dueDate,proto3" json:"due_date,omitempty"`
 	Tags          []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -585,11 +585,11 @@ func (x *UpdateTaskRequest) GetDescription() string {
 	return ""
 }
 
-func (x *UpdateTaskRequest) GetStatus() TaskStatus {
+func (x *UpdateTaskRequest) GetStatus() string {
 	if x != nil {
 		return x.Status
 	}
-	return TaskStatus_PENDING
+	return ""
 }
 
 func (x *UpdateTaskRequest) GetDueDate() *timestamppb.Timestamp {
@@ -750,13 +750,13 @@ var File_proto_task_proto protoreflect.FileDescriptor
 
 const file_proto_task_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/task.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfa\x02\n" +
+	"\x10proto/task.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xdc\x02\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\x12+\n" +
-	"\bpriority\x18\x04 \x01(\x0e2\x0f.TaskPrioritiesR\bpriority\x12#\n" +
-	"\x06status\x18\x05 \x01(\x0e2\v.TaskStatusR\x06status\x12\x17\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1a\n" +
+	"\bpriority\x18\x04 \x01(\tR\bpriority\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x12\x17\n" +
 	"\auser_id\x18\x06 \x01(\tR\x06userId\x129\n" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
@@ -764,11 +764,11 @@ const file_proto_task_proto_rawDesc = "" +
 	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x125\n" +
 	"\bdue_date\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\adueDate\x12\x12\n" +
 	"\x04tags\x18\n" +
-	" \x03(\tR\x04tags\"\xdc\x01\n" +
+	" \x03(\tR\x04tags\"\xcb\x01\n" +
 	"\x11CreateTaskRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x02 \x01(\tR\vdescription\x12+\n" +
-	"\bpriority\x18\x03 \x01(\x0e2\x0f.TaskPrioritiesR\bpriority\x12\x17\n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1a\n" +
+	"\bpriority\x18\x03 \x01(\tR\bpriority\x12\x17\n" +
 	"\auser_id\x18\x04 \x01(\tR\x06userId\x125\n" +
 	"\bdue_date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\adueDate\x12\x12\n" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\"B\n" +
@@ -784,13 +784,13 @@ const file_proto_task_proto_rawDesc = "" +
 	"\x05tasks\x18\x01 \x03(\v2\x05.TaskR\x05tasks\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xed\x01\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xe0\x01\n" +
 	"\x11UpdateTaskRequest\x12\x17\n" +
 	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\x12#\n" +
-	"\x06status\x18\x05 \x01(\x0e2\v.TaskStatusR\x06status\x125\n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x125\n" +
 	"\bdue_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\adueDate\x12\x12\n" +
 	"\x04tags\x18\a \x03(\tR\x04tags\"E\n" +
 	"\x11DeleteTaskRequest\x12\x17\n" +
@@ -811,10 +811,10 @@ const file_proto_task_proto_rawDesc = "" +
 	"\n" +
 	"\x06NORMAL\x10\x01\x12\b\n" +
 	"\x04HIGH\x10\x02\x12\f\n" +
-	"\bCRITICAL\x10\x032\x8f\x02\n" +
-	"\vTaskService\x121\n" +
+	"\bCRITICAL\x10\x032\x82\x02\n" +
+	"\vTaskService\x12$\n" +
 	"\n" +
-	"CreateTask\x12\x12.CreateTaskRequest\x1a\r.TaskResponse\"\x00\x12+\n" +
+	"CreateTask\x12\x05.Task\x1a\r.TaskResponse\"\x00\x12+\n" +
 	"\aGetTask\x12\x0f.GetTaskRequest\x1a\r.TaskResponse\"\x00\x124\n" +
 	"\tListTasks\x12\x11.ListTasksRequest\x1a\x12.ListTasksResponse\"\x00\x121\n" +
 	"\n" +
@@ -852,33 +852,29 @@ var file_proto_task_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
 }
 var file_proto_task_proto_depIdxs = []int32{
-	1,  // 0: Task.priority:type_name -> TaskPriorities
-	0,  // 1: Task.status:type_name -> TaskStatus
-	11, // 2: Task.created_at:type_name -> google.protobuf.Timestamp
-	11, // 3: Task.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 4: Task.due_date:type_name -> google.protobuf.Timestamp
-	1,  // 5: CreateTaskRequest.priority:type_name -> TaskPriorities
-	11, // 6: CreateTaskRequest.due_date:type_name -> google.protobuf.Timestamp
-	0,  // 7: ListTasksRequest.status:type_name -> TaskStatus
-	2,  // 8: ListTasksResponse.tasks:type_name -> Task
-	0,  // 9: UpdateTaskRequest.status:type_name -> TaskStatus
-	11, // 10: UpdateTaskRequest.due_date:type_name -> google.protobuf.Timestamp
-	2,  // 11: TaskResponse.task:type_name -> Task
-	3,  // 12: TaskService.CreateTask:input_type -> CreateTaskRequest
-	4,  // 13: TaskService.GetTask:input_type -> GetTaskRequest
-	5,  // 14: TaskService.ListTasks:input_type -> ListTasksRequest
-	7,  // 15: TaskService.UpdateTask:input_type -> UpdateTaskRequest
-	8,  // 16: TaskService.DeleteTask:input_type -> DeleteTaskRequest
-	9,  // 17: TaskService.CreateTask:output_type -> TaskResponse
-	9,  // 18: TaskService.GetTask:output_type -> TaskResponse
-	6,  // 19: TaskService.ListTasks:output_type -> ListTasksResponse
-	9,  // 20: TaskService.UpdateTask:output_type -> TaskResponse
-	10, // 21: TaskService.DeleteTask:output_type -> DeleteTaskResponse
-	17, // [17:22] is the sub-list for method output_type
-	12, // [12:17] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	11, // 0: Task.created_at:type_name -> google.protobuf.Timestamp
+	11, // 1: Task.updated_at:type_name -> google.protobuf.Timestamp
+	11, // 2: Task.due_date:type_name -> google.protobuf.Timestamp
+	11, // 3: CreateTaskRequest.due_date:type_name -> google.protobuf.Timestamp
+	0,  // 4: ListTasksRequest.status:type_name -> TaskStatus
+	2,  // 5: ListTasksResponse.tasks:type_name -> Task
+	11, // 6: UpdateTaskRequest.due_date:type_name -> google.protobuf.Timestamp
+	2,  // 7: TaskResponse.task:type_name -> Task
+	2,  // 8: TaskService.CreateTask:input_type -> Task
+	4,  // 9: TaskService.GetTask:input_type -> GetTaskRequest
+	5,  // 10: TaskService.ListTasks:input_type -> ListTasksRequest
+	7,  // 11: TaskService.UpdateTask:input_type -> UpdateTaskRequest
+	8,  // 12: TaskService.DeleteTask:input_type -> DeleteTaskRequest
+	9,  // 13: TaskService.CreateTask:output_type -> TaskResponse
+	9,  // 14: TaskService.GetTask:output_type -> TaskResponse
+	6,  // 15: TaskService.ListTasks:output_type -> ListTasksResponse
+	9,  // 16: TaskService.UpdateTask:output_type -> TaskResponse
+	10, // 17: TaskService.DeleteTask:output_type -> DeleteTaskResponse
+	13, // [13:18] is the sub-list for method output_type
+	8,  // [8:13] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_proto_task_proto_init() }

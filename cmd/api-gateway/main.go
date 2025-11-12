@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	AuthHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
+	TaskHandler "github.com/oogway93/taskmanager/internal/api-gateway/task"
 	healthHandler "github.com/oogway93/taskmanager/internal/api-gateway/health"
 )
 
@@ -35,6 +36,12 @@ func main() {
 		logger.Log.Fatal("Failed to create auth handler", zap.Error(err))
 	}
 	defer authHandler.Close()
+
+	taskHandler, err := TaskHandler.NewHandler(cfg, authHandler.AuthClient)
+	if err != nil {
+		logger.Log.Fatal("Failed to create task handler", zap.Error(err))
+	}
+	defer taskHandler.Close()
 	router := gin.Default()
 	router.Use(cors.Default())
 
@@ -50,6 +57,7 @@ func main() {
 	protected := router.Group("/api/v1")
 	{
 		protected.GET("/auth/profile", authHandler.GetProfile)
+		protected.POST("/task", taskHandler.Create)
 	}
 
 	server := &http.Server{

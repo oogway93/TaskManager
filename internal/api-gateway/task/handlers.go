@@ -6,17 +6,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oogway93/taskmanager/config"
-	auth "github.com/oogway93/taskmanager/internal/api-gateway/auth"
+	// auth "github.com/oogway93/taskmanager/internal/api-gateway/auth"
+
+	AuthHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
 )
 
 type Handler struct {
 	taskClient *Client
-	authClient *auth.Client
+	authClient *AuthHandler.Client
 	cfg        *config.Config
 }
 
-func NewHandler(cfg *config.Config) (*Handler, error) {
+func NewHandler(cfg *config.Config, authClient *AuthHandler.Client) (*Handler, error) {
 	client, err := NewClient(cfg.GetTaskGRPCAddress())
 	if err != nil {
 		return nil, err
@@ -24,6 +26,7 @@ func NewHandler(cfg *config.Config) (*Handler, error) {
 
 	return &Handler{
 		taskClient: client,
+		authClient: authClient,
 		cfg:        cfg,
 	}, nil
 }
@@ -42,14 +45,6 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	// // Дополнительная валидация
-	// if err := h.validateRegisterRequest(&req); err != nil {
-	// 	c.JSON(http.StatusBadRequest, ErrorResponse{
-	// 		Error:   "VALIDATION_ERROR",
-	// 		Message: err.Error(),
-	// 	})
-	// 	return
-	// }
 
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -59,12 +54,14 @@ func (h *Handler) Create(c *gin.Context) {
 		})
 		return
 	}
-
+	
 	respAuth, err := h.authClient.GetUserProfile(userID.(string))
 	if err != nil {
 		// h.handleGRPCError(c, err)
 		return
 	}
+
+	req.User_id = userID.(string)
 
 	// Вызов gRPC сервиса аутентификации
 	respTask, err := h.taskClient.CreateTask(req)
@@ -76,15 +73,16 @@ func (h *Handler) Create(c *gin.Context) {
 	// Преобразование gRPC ответа в HTTP ответ
 	response := entity.TaskResponse{
 		Task: entity.Task{
+			ID:          respTask.Task.Id,
 			Title:       respTask.Task.Title,
 			Description: respTask.Task.Description,
-			Priority:    respTask.Task.Priority.String(),
-			Status:      respTask.Task.Status.String(),
+			Priority:    respTask.Task.Priority,
+			Status:      respTask.Task.Status,
 			Tags:        respTask.Task.Tags,
+			User_id:     respAuth.User.Id,
+			CreatedAt:   respTask.Task.CreatedAt.AsTime(),
+			UpdatedAt:   respTask.Task.UpdatedAt.AsTime(),
 		},
-		CreatedAt: respTask.Task.CreatedAt.AsTime(),
-		UpdatedAt: respTask.Task.UpdatedAt.AsTime(),
-		User_id:   respAuth.User.Id,
 	}
 
 	// logger.WithFields(logger.Fields{
@@ -93,4 +91,8 @@ func (h *Handler) Create(c *gin.Context) {
 	// }).Info("User registered successfully")
 
 	c.JSON(http.StatusCreated, response)
+}
+
+func (h *Handler) Close() {
+	h.taskClient.Close()
 }

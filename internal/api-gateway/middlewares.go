@@ -159,7 +159,7 @@ func validateTokenLocally(tokenString, secretKey string) (*AuthUser, error) {
 func isPublicRoute(path string) bool {
 	publicRoutes := []string{
 		"/health",
-		"/api/v1/auth/register",
+		"/api/v1/auth/registration",
 		"/api/v1/auth/login",
 		"/api/v1/auth/refresh",
 		"/metrics",

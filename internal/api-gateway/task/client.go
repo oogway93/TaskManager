@@ -1,7 +1,10 @@
 package task
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/oogway93/taskmanager/gen/task"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
@@ -30,5 +33,28 @@ func NewClient(serverAddr string) (*Client, error) {
 }
 
 func (c *Client) CreateTask(taskReq entity.TaskRequest) (*task.TaskResponse, error) {
-	return nil, nil
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	req := &task.Task{
+		Title:    taskReq.Title,
+		Description:    taskReq.Description,
+		Priority:    taskReq.Priority,
+		UserId:    taskReq.User_id,
+	}
+
+	resp, err := c.client.CreateTask(ctx, req)
+	if err != nil {
+		log.Println("Error in Create task client", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (c *Client) Close() error {
+	if c.conn != nil {
+		return c.conn.Close()
+	}
+	return nil
 }

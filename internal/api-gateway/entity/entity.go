@@ -65,21 +65,35 @@ type ErrorResponse struct {
 }
 
 type Task struct {
+	ID          string
+	Title       string
+	Description string
+	Priority    string
+	Status      string
+	Tags        []string
+	User_id     string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DueDate     time.Time
+}
+type TaskCreate struct {
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Priority    string   `json:"priority"` //TODO:сделать enum, чтобы проверялось правильность введения
 	Status      string   `json:"status"`
 	Tags        []string `json:"tags"`
+	User_id      string
 }
 
 type TaskRequest struct {
-	Task Task
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Priority    string   `json:"priority"` //TODO:сделать enum, чтобы проверялось правильность введения
+	Status      string   `json:"status"`
+	Tags        []string `json:"tags"`
+	User_id      string
 }
 
 type TaskResponse struct {
-	ID        string    `json:"id"`
-	Task      Task      `json:"task"`
-	User_id   string    `json:"user_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Task Task `json:"task"`
 }

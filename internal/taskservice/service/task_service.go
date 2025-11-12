@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"errors"
 
+	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
 	"github.com/oogway93/taskmanager/internal/taskservice/repository"
 )
 
@@ -14,7 +16,8 @@ var (
 )
 
 type TaskService interface {
-	// Register(ctx context.Context, email, password, name string) (*entity.User, error)
+	CreateTask(ctx context.Context, task *entity.Task) (*entity.Task, error)
+	// Register( email, password, name string) (*entity.User, error)
 	// Login(ctx context.Context, email, password string) (*entity.User, error)
 	// ValidateToken(token string) (*TokenClaims, error)
 	// GetUserByID(ctx context.Context, userID string) (*entity.User, error)
@@ -22,13 +25,20 @@ type TaskService interface {
 }
 
 type taskService struct {
-	taskRepo     repository.TaskRepository
+	taskRepo repository.TaskRepository
 }
 
-func NewTaskService(userRepo repository.TaskRepository) TaskService {
+func NewTaskService(taskRepo repository.TaskRepository) TaskService {
 	return &taskService{
-		taskRepo:     userRepo,
+		taskRepo: taskRepo,
 	}
+}
+
+func (s *taskService) CreateTask(ctx context.Context, task *entity.Task) (*entity.Task, error) {
+	if err := s.taskRepo.CreateTask(ctx, task); err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
 // func (s *authService) Register(ctx context.Context, email, password, name string) (*entity.User, error) {
