@@ -23,23 +23,23 @@ import (
 func main() {
 	cfg := config.Load()
 
-	logger.Init(cfg)
-	defer logger.Sync()
+	Log := logger.Init(cfg)
+	defer logger.Sync(Log)
 
 	jwtConfig := middlewares.NewJWTConfig(cfg)
 
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	authHandler, err := AuthHandler.NewHandler(cfg)
+	authHandler, err := AuthHandler.NewHandler(cfg, Log)
 	if err != nil {
-		logger.Log.Fatal("Failed to create auth handler", zap.Error(err))
+		Log.Fatal("Failed to create auth handler", zap.Error(err))
 	}
 	defer authHandler.Close()
 
-	taskHandler, err := TaskHandler.NewHandler(cfg, authHandler.AuthClient)
+	taskHandler, err := TaskHandler.NewHandler(cfg, authHandler.AuthClient, Log)
 	if err != nil {
-		logger.Log.Fatal("Failed to create task handler", zap.Error(err))
+		Log.Fatal("Failed to create task handler", zap.Error(err))
 	}
 	defer taskHandler.Close()
 	router := gin.Default()
@@ -58,6 +58,7 @@ func main() {
 	{
 		protected.GET("/auth/profile", authHandler.GetProfile)
 		protected.POST("/task", taskHandler.Create)
+		protected.GET("/task", taskHandler.ListTasks)
 	}
 
 	server := &http.Server{
@@ -70,13 +71,13 @@ func main() {
 
 	// Graceful shutdown
 	go func() {
-		logger.Log.Info("🚀 API Gateway started on:", zap.String("address", cfg.GetServerAddress()))
-		logger.Log.Info("📊 Environment:", zap.String("env", cfg.App.Env))
-		// log.Printf("🔗 Task Service: %s", cfg.TaskServiceURL) //TODO:подключить task и auth service в логи
-		logger.Log.Info("🔗 Auth Service:", zap.String("Auth Service URL", cfg.GetAuthServiceURL()))
+		Log.Info("🚀 API Gateway started on:", zap.String("address", cfg.GetServerAddress()))
+		Log.Info("📊 Environment:", zap.String("env", cfg.App.Env))
+		Log.Info("🔗 Task Service:", zap.String("Task Service URL", cfg.GetTaskServiceURL())) //TODO:подключить task и auth service в логи
+		Log.Info("🔗 Auth Service:", zap.String("Auth Service URL", cfg.GetAuthServiceURL()))
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Log.Error("Failed to start server", zap.Error(err))
+			Log.Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
 
@@ -85,15 +86,15 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.Log.Info("🛑 Shutting down server...")
+	Log.Info("🛑 Shutting down server...")
 
 	// Даем время на завершение активных соединений
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Log.Debug("Server forced to shutdown", zap.Error(err))
+		Log.Fatal("Server forced to shutdown", zap.Error(err))
 	}
 
-	logger.Log.Info("✅ Server exited properly")
+	Log.Info("✅ Server exited properly")
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"go.uber.org/zap"
 )
 
 var (
@@ -17,14 +18,16 @@ var (
 
 type TaskRepository interface {
 	CreateTask(ctx context.Context, task *entity.Task) error
+	ListTasks(ctx context.Context, userId string) ([]entity.Task, error)
 }
 
 type taskRepository struct {
-	db *sql.DB
+	db  *sql.DB
+	Log *zap.Logger
 }
 
 // NewTaskRepository создает новый репозиторий пользователей
-func NewTaskRepository(db *sql.DB) TaskRepository {
+func NewTaskRepository(db *sql.DB, Log *zap.Logger) TaskRepository {
 	return &taskRepository{db: db}
 }
 
@@ -51,4 +54,43 @@ func (r *taskRepository) CreateTask(ctx context.Context, task *entity.Task) erro
 	)
 
 	return err
+}
+
+func (r *taskRepository) ListTasks(ctx context.Context, userId string) ([]entity.Task, error) {
+	query := `
+	SELECT id, title, description, priority, status, tags, user_id, created_at, updated_at 
+    FROM tasks WHERE user_id = $1;	
+	`
+	rows, err := r.db.QueryContext(ctx, query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []entity.Task
+	for rows.Next() {
+		var task entity.Task
+		err := rows.Scan(
+			&task.ID,
+			&task.Title,
+			&task.Description,
+			&task.Priority,
+			&task.Status,
+			pq.Array(&task.Tags), // Используем pq.Array для сканирования массива
+			&task.User_id,
+			&task.CreatedAt,
+			&task.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	if err = rows.Err(); err != nil {
+		r.Log.Fatal("SQL error caused in repo's ListTasks", zap.Error(err))
+		return nil, ErrUserNotFound
+	}
+
+	return tasks, nil
 }

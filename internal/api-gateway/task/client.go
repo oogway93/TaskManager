@@ -3,11 +3,11 @@ package task
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/oogway93/taskmanager/gen/task"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -15,10 +15,11 @@ import (
 type Client struct {
 	conn   *grpc.ClientConn
 	client task.TaskServiceClient
+	Log    *zap.Logger
 }
 
 // NewClient создает новый клиент для работы с Task Service
-func NewClient(serverAddr string) (*Client, error) {
+func NewClient(serverAddr string, Log *zap.Logger) (*Client, error) {
 	conn, err := grpc.NewClient(serverAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -29,6 +30,7 @@ func NewClient(serverAddr string) (*Client, error) {
 	return &Client{
 		conn:   conn,
 		client: task.NewTaskServiceClient(conn),
+		Log:    Log,
 	}, nil
 }
 
@@ -37,17 +39,35 @@ func (c *Client) CreateTask(taskReq entity.TaskRequest) (*task.TaskResponse, err
 	defer cancel()
 
 	req := &task.Task{
-		Title:    taskReq.Title,
-		Description:    taskReq.Description,
+		Title:       taskReq.Title,
+		Description: taskReq.Description,
 		Priority:    taskReq.Priority,
-		UserId:    taskReq.User_id,
+		UserId:      taskReq.User_id,
 	}
 
 	resp, err := c.client.CreateTask(ctx, req)
 	if err != nil {
-		log.Println("Error in Create task client", err)
+		c.Log.Fatal("Error caused in Create task client", zap.Error(err))
 		return nil, err
 	}
+
+	return resp, nil
+}
+
+func (c *Client) ListTasks(userId string) (*task.ListTasksResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	req := &task.ListTasksRequest{UserId: userId}
+
+	resp, err := c.client.ListTasks(ctx, req)
+	if err != nil {
+		c.Log.Fatal("Error caused in ListTasks task's client", zap.Error(err))
+		return nil, err
+	}
+
+	
+	
 
 	return resp, nil
 }

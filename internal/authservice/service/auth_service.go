@@ -7,6 +7,7 @@ import (
 
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
 	"github.com/oogway93/taskmanager/internal/authservice/repository"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,25 +23,27 @@ type AuthService interface {
 	Login(ctx context.Context, email, password string) (*entity.User, error)
 	ValidateToken(token string) (*TokenClaims, error)
 	GetUserByID(ctx context.Context, userID string) (*entity.User, error)
-	// UpdateUserProfile(ctx context.Context, userID, email, name string) (*entity.User, error)
 }
 
 type authService struct {
 	userRepo     repository.UserRepository
 	tokenService TokenService
+	Log          *zap.Logger
 }
 
-func NewAuthService(userRepo repository.UserRepository, tokenService TokenService) AuthService {
+func NewAuthService(userRepo repository.UserRepository, tokenService TokenService, Log *zap.Logger) AuthService {
 	return &authService{
 		userRepo:     userRepo,
 		tokenService: tokenService,
+		Log:          Log,
 	}
 }
 
 func (s *authService) Register(ctx context.Context, email, password, name string) (*entity.User, error) {
 	// Проверяем существует ли пользователь
-	existing, _ := s.userRepo.GetByEmail(ctx, email)
-	if existing != nil {
+	existing, err := s.userRepo.GetByEmail(ctx, email)
+	if existing != nil || err != nil {
+		s.Log.Fatal("Error caused after trying repo's GetByEmail", zap.Error(err))
 		return nil, ErrUserAlreadyExists
 	}
 
@@ -58,12 +61,14 @@ func (s *authService) Register(ctx context.Context, email, password, name string
 	// Хэшируем пароль
 	hashedPassword, err := hashPassword(user.Password)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling the func HashPassword", zap.Error(err))
 		return nil, err
 	}
 	user.Password = string(hashedPassword)
 
 	// Сохраняем в БД
 	if err := s.userRepo.Create(ctx, user); err != nil {
+		s.Log.Fatal("Error caused after trying repo's Create in Auth Service", zap.Error(err))
 		return nil, err
 	}
 
@@ -74,16 +79,19 @@ func (s *authService) Login(ctx context.Context, email, password string) (*entit
 	// Получаем пользователя по email
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
+		s.Log.Fatal("Error caused after trying repo's GetByEmail in Auth Service", zap.Error(err))
 		return nil, ErrUserNotFound
 	}
 
 	// Проверяем пароль
 	if !checkPassword(user.Password, password) {
+		s.Log.Fatal("Error caused after trying CheckPassword in Auth Service")
 		return nil, ErrInvalidCredentials
 	}
 
 	// Проверяем активность аккаунта
 	if !user.Active {
+		s.Log.Fatal("Error caused after making check of user isActive in Auth Service")
 		return nil, errors.New("account is deactivated")
 	}
 

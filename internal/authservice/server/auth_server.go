@@ -2,11 +2,11 @@ package server
 
 import (
 	"context"
-	"log"
 
 	"github.com/oogway93/taskmanager/gen/auth"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
 	"github.com/oogway93/taskmanager/internal/authservice/service"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -16,12 +16,14 @@ type AuthServer struct {
 	auth.UnimplementedAuthServiceServer
 	authService  service.AuthService
 	tokenService service.TokenService
+	Log          *zap.Logger
 }
 
-func NewAuthServer(authService service.AuthService, tokenService service.TokenService) *AuthServer {
+func NewAuthServer(authService service.AuthService, tokenService service.TokenService, Log *zap.Logger) *AuthServer {
 	return &AuthServer{
 		authService:  authService,
 		tokenService: tokenService,
+		Log:          Log,
 	}
 }
 
@@ -42,22 +44,24 @@ func (s *AuthServer) Register(ctx context.Context, req *auth.RegisterRequest) (*
 	// Создаем пользователя
 	user, err := s.authService.Register(ctx, req.Email, req.Password, req.Name)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func Register from auth service", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Генерируем токены
 	accessToken, accessExp, err := s.tokenService.GenerateAccessToken(user)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func GenerateAccessToken from auth service", zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
 
 	refreshToken, _, err := s.tokenService.GenerateRefreshToken(user)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func GenerateRefreshToken from auth service", zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
 
-	// logger.Info("User registered", "email", user.Email, "user_id", user.ID)
-	log.Println("User registered", "email", user.Email, "user_id", user.ID)
+	s.Log.Info("User registered", zap.String("email", user.Email), zap.String("user_id", user.ID))
 
 	return &auth.RegisterResponse{
 		AccessToken:  accessToken,
@@ -69,21 +73,20 @@ func (s *AuthServer) Register(ctx context.Context, req *auth.RegisterRequest) (*
 }
 
 func (s *AuthServer) Login(ctx context.Context, req *auth.LoginRequest) (*auth.LoginResponse, error) {
-	log.Println("Login attempt", "email", req.Email)
+	s.Log.Info("Login attempt", zap.String("email", req.Email))
 
 	// Аутентифицируем пользователя
 	user, err := s.authService.Login(ctx, req.Email, req.Password)
 	if err != nil {
 		switch err {
 		case service.ErrUserNotFound, service.ErrInvalidCredentials:
-			// logger.Warn("Login failed - invalid credentials", "email", req.Email)
-			log.Println("Login failed - invalid credentials", "email", req.Email)
+			s.Log.Fatal("Login failed - invalid credentials", zap.String("email", req.Email))
 			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
 		case service.ErrUserInactive:
-			log.Println("Login failed - inactive account", "email", req.Email)
+			s.Log.Fatal("Login failed - inactive account", zap.String("email", req.Email))
 			return nil, status.Error(codes.PermissionDenied, "account is deactivated")
 		default:
-			log.Println("Login failed - internal error", "error", err, "email", req.Email)
+			s.Log.Fatal("Login failed - internal error", zap.Error(err), zap.String("email", req.Email))
 			return nil, status.Error(codes.Internal, "login failed")
 		}
 	}
@@ -91,13 +94,13 @@ func (s *AuthServer) Login(ctx context.Context, req *auth.LoginRequest) (*auth.L
 	// Генерируем токены
 	accessToken, accessExp, err := s.tokenService.GenerateAccessToken(user)
 	if err != nil {
-		log.Println("Failed to generate access token", "error", err)
+		s.Log.Fatal("Failed to generate access token", zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
 
 	refreshToken, _, err := s.tokenService.GenerateRefreshToken(user)
 	if err != nil {
-		log.Println("Failed to generate refresh token", "error", err)
+		s.Log.Fatal("Failed to generate refresh token", zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
 
@@ -107,7 +110,7 @@ func (s *AuthServer) Login(ctx context.Context, req *auth.LoginRequest) (*auth.L
 	// 	// Не прерываем вход, если не удалось сохранить сессию
 	// }
 
-	log.Println("User logged in successfully", "email", user.Email, "user_id", user.ID)
+	s.Log.Info("User logged in successfully", zap.String("email", user.Email), zap.String("user_id", user.ID))
 
 	return &auth.LoginResponse{
 		AccessToken:  accessToken,
@@ -121,12 +124,14 @@ func (s *AuthServer) Login(ctx context.Context, req *auth.LoginRequest) (*auth.L
 func (s *AuthServer) ValidateToken(ctx context.Context, req *auth.ValidateTokenRequest) (*auth.ValidateTokenResponse, error) {
 	claims, err := s.authService.ValidateToken(req.Token)
 	if err != nil {
+		s.Log.Fatal("Error caused after trying func ValidateToken", zap.Error(err))
 		return &auth.ValidateTokenResponse{Valid: false}, nil
 	}
 
 	// Проверяем что пользователь все еще существует и активен
 	user, err := s.authService.GetUserByID(ctx, claims.UserID)
 	if err != nil || !user.Active {
+		s.Log.Fatal("Error caused after calling func GetUserByID or user is not active", zap.Error(err))
 		return &auth.ValidateTokenResponse{Valid: false}, nil
 	}
 
@@ -141,6 +146,7 @@ func (s *AuthServer) ValidateToken(ctx context.Context, req *auth.ValidateTokenR
 func (s *AuthServer) GetUserProfile(ctx context.Context, req *auth.GetUserProfileRequest) (*auth.GetUserProfileResponse, error) {
 	user, err := s.authService.GetUserByID(ctx, req.UserId)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling GetUserByID", zap.Error(err))
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 

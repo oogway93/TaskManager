@@ -7,14 +7,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/oogway93/taskmanager/config"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"go.uber.org/zap"
 )
 
 type Handler struct {
 	AuthClient *Client
 	cfg        *config.Config
+	Log        *zap.Logger
 }
 
-func NewHandler(cfg *config.Config) (*Handler, error) {
+func NewHandler(cfg *config.Config, Log *zap.Logger) (*Handler, error) {
 	client, err := NewClient(cfg.GetAuthGRPCAddress())
 	if err != nil {
 		return nil, err
@@ -23,6 +25,7 @@ func NewHandler(cfg *config.Config) (*Handler, error) {
 	return &Handler{
 		AuthClient: client,
 		cfg:        cfg,
+		Log:        Log,
 	}, nil
 }
 
@@ -52,7 +55,7 @@ func (h *Handler) Register(c *gin.Context) {
 	// Вызов gRPC сервиса аутентификации
 	resp, err := h.AuthClient.Register(req.Email, req.Password, req.Name)
 	if err != nil {
-		// h.handleGRPCError(c, err)
+		h.Log.Fatal("Error caused after calling func Register in api-gateway auth's handlers", zap.Error(err))
 		return
 	}
 
@@ -71,18 +74,13 @@ func (h *Handler) Register(c *gin.Context) {
 		},
 	}
 
-	// logger.WithFields(logger.Fields{
-	// 	"user_id": resp.User.Id,
-	// 	"email":   resp.User.Email,
-	// }).Info("User registered successfully")
-
 	c.JSON(http.StatusCreated, response)
 }
 
 func (h *Handler) Login(c *gin.Context) {
 	var req entity.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Println("Invalid login request:::", err)
+		h.Log.Fatal("Invalid login request", zap.Error(err))
 
 		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
 			Error:   "VALIDATION_ERROR",
@@ -93,7 +91,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 	resp, err := h.AuthClient.Login(req.Email, req.Password)
 	if err != nil {
-		// h.handleGRPCError(c, err)
+		h.Log.Fatal("Error caused after calling auth's client func Login in api-gateway auth's handlers", zap.Error(err))
 		return
 	}
 
@@ -126,7 +124,7 @@ func (h *Handler) GetProfile(c *gin.Context) {
 
 	resp, err := h.AuthClient.GetUserProfile(userID.(string))
 	if err != nil {
-		// h.handleGRPCError(c, err)
+		h.Log.Fatal("Error caused after calling auth's client func GetUserProfile in api-gateway auth's handlers", zap.Error(err))
 		return
 	}
 

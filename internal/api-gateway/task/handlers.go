@@ -1,11 +1,12 @@
 package task
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oogway93/taskmanager/config"
+	"go.uber.org/zap"
+
 	// auth "github.com/oogway93/taskmanager/internal/api-gateway/auth"
 
 	AuthHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
@@ -16,10 +17,11 @@ type Handler struct {
 	taskClient *Client
 	authClient *AuthHandler.Client
 	cfg        *config.Config
+	Log        *zap.Logger
 }
 
-func NewHandler(cfg *config.Config, authClient *AuthHandler.Client) (*Handler, error) {
-	client, err := NewClient(cfg.GetTaskGRPCAddress())
+func NewHandler(cfg *config.Config, authClient *AuthHandler.Client, Log *zap.Logger) (*Handler, error) {
+	client, err := NewClient(cfg.GetTaskGRPCAddress(), Log)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +30,7 @@ func NewHandler(cfg *config.Config, authClient *AuthHandler.Client) (*Handler, e
 		taskClient: client,
 		authClient: authClient,
 		cfg:        cfg,
+		Log:        Log,
 	}, nil
 }
 
@@ -36,7 +39,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	// Валидация входных данных
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Println("Invalid registration request", err)
+		h.Log.Fatal("Invalid registration request", zap.Error(err))
 
 		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
 			Error:   "VALIDATION_ERROR",
@@ -44,7 +47,6 @@ func (h *Handler) Create(c *gin.Context) {
 		})
 		return
 	}
-
 
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -54,10 +56,10 @@ func (h *Handler) Create(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	respAuth, err := h.authClient.GetUserProfile(userID.(string))
 	if err != nil {
-		// h.handleGRPCError(c, err)
+		h.Log.Fatal("Error caused after calling func GetUserProfile in api-gateway task's handlers", zap.Error(err))
 		return
 	}
 
@@ -66,7 +68,7 @@ func (h *Handler) Create(c *gin.Context) {
 	// Вызов gRPC сервиса аутентификации
 	respTask, err := h.taskClient.CreateTask(req)
 	if err != nil {
-		// h.handleGRPCError(c, err)
+		h.Log.Fatal("Error caused after calling func CreateTask in api-gateway task's handlers", zap.Error(err))
 		return
 	}
 
@@ -85,12 +87,50 @@ func (h *Handler) Create(c *gin.Context) {
 		},
 	}
 
-	// logger.WithFields(logger.Fields{
-	// 	"user_id": resp.User.Id,
-	// 	"email":   resp.User.Email,
-	// }).Info("User registered successfully")
-
 	c.JSON(http.StatusCreated, response)
+}
+
+func (h *Handler) ListTasks(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, entity.ErrorResponse{
+			Error:   "Unauthorized",
+			Message: "User not authenticated",
+		})
+		return
+	}
+
+	// respAuth, err := h.authClient.GetUserProfile(userID.(string))
+	// if err != nil {
+	// 	h.Log.Fatal("Error caused after calling func GetUserProfile in api-gateway task's handlers", zap.Error(err))
+	// 	return
+	// }
+
+	respTask, err := h.taskClient.ListTasks(userID.(string))
+	if err != nil {
+		h.Log.Fatal("Error caused after calling func CreateTask in api-gateway task's handlers", zap.Error(err))
+		return
+	}
+	var tasksEntity []*entity.Task
+	for i := 0; i < len(respTask.Tasks); i++ {
+		taskEntity := &entity.Task{
+			ID:          respTask.Tasks[i].Id,
+			Title:       respTask.Tasks[i].Title,
+			Description: respTask.Tasks[i].Description,
+			Priority:    respTask.Tasks[i].Priority,
+			Status:      respTask.Tasks[i].Status,
+			Tags:        respTask.Tasks[i].Tags,
+			User_id:     respTask.Tasks[i].UserId,
+			CreatedAt:   respTask.Tasks[i].CreatedAt.AsTime(),
+			UpdatedAt:   respTask.Tasks[i].UpdatedAt.AsTime(),
+		}
+		tasksEntity = append(tasksEntity, taskEntity)
+	}
+	response := &entity.TaskListResponse{
+		Tasks: tasksEntity,
+		Total: respTask.Total,
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *Handler) Close() {

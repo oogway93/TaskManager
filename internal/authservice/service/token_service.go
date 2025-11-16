@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/oogway93/taskmanager/config"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"go.uber.org/zap"
 )
 
 var (
@@ -37,12 +38,14 @@ type TokenService interface {
 // TokenService отвечает за создание и валидацию JWT токенов
 type tokenService struct {
 	cfg *config.Config
+	Log *zap.Logger
 }
 
 // NewTokenService создает новый сервис для работы с токенами
-func NewTokenService(cfg *config.Config) TokenService {
+func NewTokenService(cfg *config.Config, Log *zap.Logger) TokenService {
 	return &tokenService{
 		cfg: cfg,
+		Log: Log,
 	}
 }
 
@@ -68,6 +71,7 @@ func (s *tokenService) GenerateAccessToken(user *entity.User) (string, time.Time
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := token.SignedString([]byte(s.cfg.JWT.Secret))
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func SignedString in tokenservice", zap.Error(err))
 		return "", time.Time{}, err
 	}
 
@@ -96,6 +100,7 @@ func (s *tokenService) GenerateRefreshToken(user *entity.User) (string, time.Tim
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := token.SignedString([]byte(s.cfg.JWT.Secret))
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func SignedString in tokenservice", zap.Error(err))
 		return "", time.Time{}, err
 	}
 
@@ -107,6 +112,7 @@ func (s *tokenService) ValidateToken(tokenString string) (*TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Проверяем алгоритм подписи
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			s.Log.Fatal("Error caused after calling func ParseWithClaims in tokenservice")
 			return nil, ErrInvalidToken
 		}
 		return []byte(s.cfg.JWT.Secret), nil
@@ -116,6 +122,7 @@ func (s *tokenService) ValidateToken(tokenString string) (*TokenClaims, error) {
 		var validationErr *jwt.ValidationError
 		if errors.As(err, &validationErr) {
 			if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
+				s.Log.Fatal("Error caused after calling func ParseWithClaims in tokenservice", zap.Error(err))
 				return nil, ErrExpiredToken
 			}
 		}
@@ -123,6 +130,7 @@ func (s *tokenService) ValidateToken(tokenString string) (*TokenClaims, error) {
 	}
 
 	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
+		s.Log.Fatal("Error caused after calling func Claims in tokenservice", zap.Error(err))
 		return claims, nil
 	}
 
@@ -133,11 +141,13 @@ func (s *tokenService) ValidateToken(tokenString string) (*TokenClaims, error) {
 func (s *tokenService) GenerateTokenPair(user *entity.User) (accessToken, refreshToken string, accessExp, refreshExp time.Time, err error) {
 	accessToken, accessExp, err = s.GenerateAccessToken(user)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func GenerateTokenPair in tokenservice", zap.Error(err))
 		return "", "", time.Time{}, time.Time{}, err
 	}
 
 	refreshToken, refreshExp, err = s.GenerateRefreshToken(user)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func GenerateRefreshPair in tokenservice", zap.Error(err))
 		return "", "", time.Time{}, time.Time{}, err
 	}
 
@@ -149,10 +159,12 @@ func (s *tokenService) ExtractUserIDFromToken(tokenString string) (string, error
 	// Парсим токен без проверки подписи (только для извлечения данных)
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, &TokenClaims{})
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func ParseUnverified in tokenservice", zap.Error(err))
 		return "", ErrInvalidToken
 	}
 
 	if claims, ok := token.Claims.(*TokenClaims); ok {
+		s.Log.Fatal("Error caused after calling func Claims in tokenservice", zap.Error(err))
 		return claims.UserID, nil
 	}
 
@@ -170,16 +182,19 @@ func (s *tokenService) RefreshTokenPair(refreshToken string, user *entity.User) 
 	// Валидируем refresh token
 	claims, err := s.ValidateToken(refreshToken)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling func ValidateToken in tokenservice", zap.Error(err))
 		return "", "", time.Time{}, time.Time{}, err
 	}
 
 	// Проверяем что это действительно refresh token
 	if claims.TokenType != "refresh" {
+		s.Log.Fatal("Error caused in make check tokenType in tokenservice", zap.Error(err))
 		return "", "", time.Time{}, time.Time{}, ErrInvalidToken
 	}
 
 	// Проверяем что токен принадлежит тому же пользователю
 	if claims.UserID != user.ID {
+		s.Log.Fatal("Error caused in make check UserID in tokenservice", zap.Error(err))
 		return "", "", time.Time{}, time.Time{}, ErrInvalidToken
 	}
 

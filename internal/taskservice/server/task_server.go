@@ -6,25 +6,30 @@ import (
 	"github.com/oogway93/taskmanager/gen/task"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
 	"github.com/oogway93/taskmanager/internal/taskservice/service"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type TaskServer struct {
 	task.UnimplementedTaskServiceServer
 	taskService service.TaskService
+	Log         *zap.Logger
 }
 
-func NewTaskServer(taskService service.TaskService) *TaskServer {
+func NewTaskServer(taskService service.TaskService, Log *zap.Logger) *TaskServer {
 	return &TaskServer{
 		taskService: taskService,
+		Log:         Log,
 	}
 }
+
 func (s *TaskServer) CreateTask(ctx context.Context, req *task.Task) (*task.TaskResponse, error) {
 	taskEntity := s.protoToTask(req)
 
 	// Вызываем сервис
 	createdTask, err := s.taskService.CreateTask(ctx, taskEntity)
 	if err != nil {
+		s.Log.Fatal("Error caused after calling the func Create Task", zap.Error(err))
 		return nil, err
 	}
 
@@ -34,6 +39,27 @@ func (s *TaskServer) CreateTask(ctx context.Context, req *task.Task) (*task.Task
 	}, nil
 
 }
+
+func (s *TaskServer) ListTasks(ctx context.Context, req *task.ListTasksRequest) (*task.ListTasksResponse, error) {
+	// Вызываем сервис
+	tasks, err := s.taskService.ListTasks(ctx, req.UserId)
+	if err != nil {
+		s.Log.Fatal("Error caused after calling the func ListTasks", zap.Error(err))
+		return nil, err
+	}
+
+	var listTasksProto []*task.Task
+	for i := 0; i < len(tasks); i++ {
+		listTasksProto = append(listTasksProto, s.taskToProto(&tasks[i]))
+	}
+
+	//Преобразуем результат обратно в protobuf
+	return &task.ListTasksResponse{
+		Tasks: listTasksProto,
+		Total: int32(len(listTasksProto)),
+	}, nil
+}
+
 func (s *TaskServer) taskToProto(taskReq *entity.Task) *task.Task {
 	return &task.Task{
 		Id:          taskReq.ID,

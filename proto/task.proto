@@ -55,16 +55,11 @@ message GetTaskRequest {
 
 message ListTasksRequest {
     string user_id = 1;
-    TaskStatus status = 2;
-    int32 page = 3;
-    int32 page_size = 4;
 }
 
 message ListTasksResponse {
     repeated Task tasks = 1;
     int32 total = 2;
-    int32 page = 3;
-    int32 page_size = 4;
 }
 
 message UpdateTaskRequest {

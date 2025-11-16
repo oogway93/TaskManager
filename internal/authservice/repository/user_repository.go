@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"go.uber.org/zap"
 )
 
 var (
@@ -18,24 +19,27 @@ type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
 	GetByID(ctx context.Context, userID string) (*entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
-	// Update(ctx context.Context, user *service.User) error
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 }
 
 type userRepository struct {
-	db *sql.DB
+	db  *sql.DB
+	Log *zap.Logger
 }
 
 // NewUserRepository создает новый репозиторий пользователей
-func NewUserRepository(db *sql.DB) UserRepository {
-	return &userRepository{db: db}
+func NewUserRepository(db *sql.DB, Log *zap.Logger) UserRepository {
+	return &userRepository{
+		db:  db,
+		Log: Log,
+	}
 }
 
 func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	query := `
 		INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-	` //TODO: убрать raw sql, использовать gORM 
+	` //TODO: убрать raw sql, использовать gORM
 
 	user.ID = uuid.New().String()
 	user.CreatedAt = time.Now()
@@ -83,9 +87,11 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 	)
 
 	if err == sql.ErrNoRows {
+		r.Log.Fatal("SQL error 'ErrNoRows' caused in repo's GetByEmail", zap.Error(err)) 
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
+		r.Log.Fatal("Error caused in repo's GetByEmail", zap.Error(err)) 
 		return nil, err
 	}
 
@@ -112,9 +118,11 @@ func (r *userRepository) GetByID(ctx context.Context, userID string) (*entity.Us
 	)
 
 	if err == sql.ErrNoRows {
+		r.Log.Fatal("SQL error 'ErrNoRows' caused in repo's GetByID", zap.Error(err)) 
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
+		r.Log.Fatal("Error caused in repo's GetByID", zap.Error(err)) 
 		return nil, err
 	}
 

@@ -6,11 +6,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var Log *zap.Logger
-
-func Init(cfg *config.Config) {
+func Init(cfg *config.Config) (*zap.Logger) {
 	var err error
 
+	var Log *zap.Logger
 	if cfg.IsProduction() {
 		Log, err = zap.NewProduction() // JSON Output
 	} else {
@@ -28,8 +27,9 @@ func Init(cfg *config.Config) {
 	if err != nil {
 		panic(err)
 	}
+	return Log
 }
 
-func Sync() {
+func Sync(Log *zap.Logger) {
 	_ = Log.Sync()
 }

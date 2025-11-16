@@ -1,16 +1,18 @@
-package repository
+package postgres
 
 import (
 	"database/sql"
 	"time"
 
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 // NewPostgresDB создает подключение к PostgreSQL
-func NewPostgresDB(connStr string) (*sql.DB, error) {
+func NewPostgresDB(connStr string, Log *zap.Logger) (*sql.DB, error) {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
+		Log.Fatal("Failed connection to postgres DB in Auth Service")
 		return nil, err
 	}
 
@@ -22,6 +24,7 @@ func NewPostgresDB(connStr string) (*sql.DB, error) {
 
 	// Проверка подключения
 	if err := db.Ping(); err != nil {
+		Log.Fatal("Failed to ping db connection:", zap.Error(err))
 		return nil, err
 	}
 

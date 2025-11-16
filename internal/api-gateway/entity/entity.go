@@ -82,7 +82,7 @@ type TaskCreate struct {
 	Priority    string   `json:"priority"` //TODO:сделать enum, чтобы проверялось правильность введения
 	Status      string   `json:"status"`
 	Tags        []string `json:"tags"`
-	User_id      string
+	User_id     string
 }
 
 type TaskRequest struct {
@@ -91,9 +91,14 @@ type TaskRequest struct {
 	Priority    string   `json:"priority"` //TODO:сделать enum, чтобы проверялось правильность введения
 	Status      string   `json:"status"`
 	Tags        []string `json:"tags"`
-	User_id      string
+	User_id     string
 }
 
 type TaskResponse struct {
 	Task Task `json:"task"`
+}
+
+type TaskListResponse struct {
+	Tasks []*Task `json:"tasks"`
+	Total int32  `json:"total"`
 }
