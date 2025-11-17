@@ -65,10 +65,22 @@ func (c *Client) ListTasks(userId string) (*task.ListTasksResponse, error) {
 		c.Log.Fatal("Error caused in ListTasks task's client", zap.Error(err))
 		return nil, err
 	}
+	return resp, nil
+}
 
-	
-	
+func (c *Client) GetTask(taskReq entity.GetTaskRequest) (*task.TaskResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
+	req := &task.GetTaskRequest{
+		TaskId: taskReq.TaskId,
+	}
+
+	resp, err := c.client.GetTask(ctx, req)
+	if err != nil {
+		c.Log.Error("Error caused in GetTask() task's client", zap.Error(err))
+		return nil, err
+	}
 	return resp, nil
 }
 

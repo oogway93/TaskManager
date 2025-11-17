@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 
 	"github.com/oogway93/taskmanager/gen/task"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
@@ -29,7 +30,7 @@ func (s *TaskServer) CreateTask(ctx context.Context, req *task.Task) (*task.Task
 	// Вызываем сервис
 	createdTask, err := s.taskService.CreateTask(ctx, taskEntity)
 	if err != nil {
-		s.Log.Fatal("Error caused after calling the func Create Task", zap.Error(err))
+		s.Log.Error("Error caused after calling the func Create Task", zap.Error(err))
 		return nil, err
 	}
 
@@ -44,7 +45,7 @@ func (s *TaskServer) ListTasks(ctx context.Context, req *task.ListTasksRequest) 
 	// Вызываем сервис
 	tasks, err := s.taskService.ListTasks(ctx, req.UserId)
 	if err != nil {
-		s.Log.Fatal("Error caused after calling the func ListTasks", zap.Error(err))
+		s.Log.Error("Error caused after calling the func ListTasks", zap.Error(err))
 		return nil, err
 	}
 
@@ -57,6 +58,20 @@ func (s *TaskServer) ListTasks(ctx context.Context, req *task.ListTasksRequest) 
 	return &task.ListTasksResponse{
 		Tasks: listTasksProto,
 		Total: int32(len(listTasksProto)),
+	}, nil
+}
+
+func (s *TaskServer) GetTask(ctx context.Context, req *task.GetTaskRequest) (*task.TaskResponse, error) {
+	log.Println("input data from server grpc ", req.TaskId)
+	taskSer, err := s.taskService.GetTask(ctx, req.TaskId)
+	if err != nil {
+		s.Log.Error("Error caused after calling the func GetTask", zap.Error(err))
+		return nil, err
+	}
+	log.Println("task", taskSer)
+
+	return &task.TaskResponse{
+		Task: s.taskToProto(taskSer),
 	}, nil
 }
 

@@ -7,8 +7,6 @@ import (
 	"github.com/oogway93/taskmanager/config"
 	"go.uber.org/zap"
 
-	// auth "github.com/oogway93/taskmanager/internal/api-gateway/auth"
-
 	AuthHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
 	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
 )
@@ -39,7 +37,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	// Валидация входных данных
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.Log.Fatal("Invalid registration request", zap.Error(err))
+		h.Log.Fatal("Invalid Create task request", zap.Error(err))
 
 		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
 			Error:   "VALIDATION_ERROR",
@@ -74,7 +72,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	// Преобразование gRPC ответа в HTTP ответ
 	response := entity.TaskResponse{
-		Task: entity.Task{
+		Task: &entity.Task{
 			ID:          respTask.Task.Id,
 			Title:       respTask.Task.Title,
 			Description: respTask.Task.Description,
@@ -100,12 +98,6 @@ func (h *Handler) ListTasks(c *gin.Context) {
 		return
 	}
 
-	// respAuth, err := h.authClient.GetUserProfile(userID.(string))
-	// if err != nil {
-	// 	h.Log.Fatal("Error caused after calling func GetUserProfile in api-gateway task's handlers", zap.Error(err))
-	// 	return
-	// }
-
 	respTask, err := h.taskClient.ListTasks(userID.(string))
 	if err != nil {
 		h.Log.Fatal("Error caused after calling func CreateTask in api-gateway task's handlers", zap.Error(err))
@@ -129,6 +121,44 @@ func (h *Handler) ListTasks(c *gin.Context) {
 	response := &entity.TaskListResponse{
 		Tasks: tasksEntity,
 		Total: respTask.Total,
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) GetTask(c *gin.Context) {
+	taskId := c.Param("id")
+	h.Log.Info("taskid", zap.String("taskid", taskId))
+	if taskId == "" {
+		h.Log.Error("Nil Param 'id' in path from request")
+
+		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
+			Error:   "VALIDATION_ERROR",
+			Message: "Invalid request path's id",
+		})
+	}
+
+	req := entity.GetTaskRequest{
+		TaskId: taskId,
+	}
+
+	respTask, err := h.taskClient.GetTask(req)
+	if err != nil {
+		h.Log.Fatal("Error caused after calling func CreateTask in api-gateway task's handlers", zap.Error(err))
+		return
+	}
+
+	response := &entity.TaskResponse{
+		Task: &entity.Task{
+			ID:          respTask.Task.Id,
+			Title:       respTask.Task.Title,
+			Description: respTask.Task.Description,
+			Priority:    respTask.Task.Priority,
+			Status:      respTask.Task.Status,
+			Tags:        respTask.Task.Tags,
+			User_id:     respTask.Task.UserId,
+			CreatedAt:   respTask.Task.CreatedAt.AsTime(),
+			UpdatedAt:   respTask.Task.UpdatedAt.AsTime(),
+		},
 	}
 	c.JSON(http.StatusOK, response)
 }

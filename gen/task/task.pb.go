@@ -329,7 +329,6 @@ func (x *CreateTaskRequest) GetTags() []string {
 type GetTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -367,13 +366,6 @@ func (*GetTaskRequest) Descriptor() ([]byte, []int) {
 func (x *GetTaskRequest) GetTaskId() string {
 	if x != nil {
 		return x.TaskId
-	}
-	return ""
-}
-
-func (x *GetTaskRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
 	}
 	return ""
 }
@@ -731,10 +723,9 @@ const file_proto_task_proto_rawDesc = "" +
 	"\bpriority\x18\x03 \x01(\tR\bpriority\x12\x17\n" +
 	"\auser_id\x18\x04 \x01(\tR\x06userId\x125\n" +
 	"\bdue_date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\adueDate\x12\x12\n" +
-	"\x04tags\x18\x06 \x03(\tR\x04tags\"B\n" +
+	"\x04tags\x18\x06 \x03(\tR\x04tags\")\n" +
 	"\x0eGetTaskRequest\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"+\n" +
+	"\atask_id\x18\x01 \x01(\tR\x06taskId\"+\n" +
 	"\x10ListTasksRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"F\n" +
 	"\x11ListTasksResponse\x12\x1b\n" +

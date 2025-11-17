@@ -50,7 +50,6 @@ message CreateTaskRequest {
 
 message GetTaskRequest {
     string task_id = 1;
-    string user_id = 2;
 }
 
 message ListTasksRequest {

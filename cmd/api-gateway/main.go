@@ -59,6 +59,7 @@ func main() {
 		protected.GET("/auth/profile", authHandler.GetProfile)
 		protected.POST("/task", taskHandler.Create)
 		protected.GET("/task", taskHandler.ListTasks)
+		protected.GET("/task/:id", taskHandler.GetTask)
 	}
 
 	server := &http.Server{

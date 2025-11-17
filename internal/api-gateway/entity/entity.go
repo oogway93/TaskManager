@@ -95,10 +95,14 @@ type TaskRequest struct {
 }
 
 type TaskResponse struct {
-	Task Task `json:"task"`
+	Task *Task `json:"task"`
 }
 
 type TaskListResponse struct {
 	Tasks []*Task `json:"tasks"`
 	Total int32  `json:"total"`
+}
+
+type GetTaskRequest struct {
+	TaskId string 
 }
