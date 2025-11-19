@@ -16,7 +16,7 @@ service AuthService {
 message RegisterRequest {
     string email = 1;
     string password = 2;
-    string name = 3;
+    string username = 3;
 }
 
 message RegisterResponse {
@@ -63,7 +63,7 @@ message LoginResponse {
 message User {
     string id = 1;
     string email = 2;
-    string name = 3;
+    string username = 3;
     string role = 4;
     bool active = 5;
     bool email_verified = 6;

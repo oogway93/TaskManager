@@ -43,6 +43,8 @@ func (c *Client) CreateTask(taskReq entity.TaskRequest) (*task.TaskResponse, err
 		Description: taskReq.Description,
 		Priority:    taskReq.Priority,
 		UserId:      taskReq.User_id,
+		Tags:        taskReq.Tags,
+		Status:      taskReq.Status,
 	}
 
 	resp, err := c.client.CreateTask(ctx, req)

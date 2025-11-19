@@ -13,9 +13,10 @@ import (
 )
 
 type AuthUser struct {
-	UserID string
-	Email  string
-	Role   string
+	UserID   string
+	Username string
+	Email    string
+	Role     string
 }
 
 // JWTConfig конфигурация для JWT middleware
@@ -46,8 +47,8 @@ func JWTMiddleware(jwtConfig *JWTConfig) gin.HandlerFunc {
 			// 	"method": c.Request.Method,
 			// 	"error":  err.Error(),
 			// }).Warn("Failed to extract token from header")
-			log.Println("Failed to extract token from header" )
-			
+			log.Println("Failed to extract token from header")
+
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error":   "UNAUTHORIZED",
 				"message": "Authorization token required",
@@ -65,7 +66,7 @@ func JWTMiddleware(jwtConfig *JWTConfig) gin.HandlerFunc {
 			// 	"error":  err.Error(),
 			// }).Warn("Token validation failed")
 			log.Println("Token validation failed")
-			
+
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error":   "INVALID_TOKEN",
 				"message": "Invalid or expired token",
@@ -76,6 +77,7 @@ func JWTMiddleware(jwtConfig *JWTConfig) gin.HandlerFunc {
 
 		// Устанавливаем данные пользователя в контекст
 		c.Set("user", authUser)
+		c.Set("username", authUser.Username)
 		c.Set("user_id", authUser.UserID)
 		c.Set("user_email", authUser.Email)
 		c.Set("user_role", authUser.Role)
@@ -141,6 +143,7 @@ func validateTokenLocally(tokenString, secretKey string) (*AuthUser, error) {
 
 	// Извлекаем данные пользователя
 	userID, _ := claims["user_id"].(string)
+	username, _ := claims["username"].(string)
 	email, _ := claims["email"].(string)
 	role, _ := claims["role"].(string)
 
@@ -150,6 +153,7 @@ func validateTokenLocally(tokenString, secretKey string) (*AuthUser, error) {
 
 	return &AuthUser{
 		UserID: userID,
+		Username: username,
 		Email:  email,
 		Role:   role,
 	}, nil
@@ -191,50 +195,50 @@ func GetUserFromContext(c *gin.Context) (*AuthUser, error) {
 
 // ==================== ROLE-BASED ACCESS CONTROL ====================
 
-// RequireRole middleware для проверки ролей
-func RequireRole(roles ...string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		user, err := GetUserFromContext(c)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error":   "UNAUTHORIZED",
-				"message": "Authentication required",
-			})
-			c.Abort()
-			return
-		}
+// // RequireRole middleware для проверки ролей
+// func RequireRole(roles ...string) gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		user, err := GetUserFromContext(c)
+// 		if err != nil {
+// 			c.JSON(http.StatusUnauthorized, gin.H{
+// 				"error":   "UNAUTHORIZED",
+// 				"message": "Authentication required",
+// 			})
+// 			c.Abort()
+// 			return
+// 		}
 
-		// Проверяем, есть ли у пользователя необходимая роль
-		hasRole := false
-		for _, role := range roles {
-			if user.Role == role {
-				hasRole = true
-				break
-			}
-		}
+// 		// Проверяем, есть ли у пользователя необходимая роль
+// 		hasRole := false
+// 		for _, role := range roles {
+// 			if user.Role == role {
+// 				hasRole = true
+// 				break
+// 			}
+// 		}
 
-		if !hasRole {
-			// logger.WithFields(logger.Fields{
-			// 	"user_id":        user.UserID,
-			// 	"email":          user.Email,
-			// 	"role":           user.Role,
-			// 	"required_roles": roles,
-			// }).Warn("Access denied - insufficient permissions")
-			log.Println("Access denied - insufficient permissions")
-			
-			c.JSON(http.StatusForbidden, gin.H{
-				"error":   "FORBIDDEN",
-				"message": "Insufficient permissions",
-			})
-			c.Abort()
-			return
-		}
+// 		if !hasRole {
+// 			// logger.WithFields(logger.Fields{
+// 			// 	"user_id":        user.UserID,
+// 			// 	"email":          user.Email,
+// 			// 	"role":           user.Role,
+// 			// 	"required_roles": roles,
+// 			// }).Warn("Access denied - insufficient permissions")
+// 			log.Println("Access denied - insufficient permissions")
 
-		c.Next()
-	}
-}
+// 			c.JSON(http.StatusForbidden, gin.H{
+// 				"error":   "FORBIDDEN",
+// 				"message": "Insufficient permissions",
+// 			})
+// 			c.Abort()
+// 			return
+// 		}
 
-// AdminOnly middleware для проверки административных прав
-func AdminOnly() gin.HandlerFunc {
-	return RequireRole("admin", "superadmin")
-}
+// 		c.Next()
+// 	}
+// }
+
+// // AdminOnly middleware для проверки административных прав
+// func AdminOnly() gin.HandlerFunc {
+// 	return RequireRole("admin", "superadmin")
+// }

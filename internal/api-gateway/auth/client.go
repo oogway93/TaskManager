@@ -39,14 +39,14 @@ func (c *Client) Close() error {
 }
 
 // Register регистрирует нового пользователя
-func (c *Client) Register(email, password, name string) (*auth.RegisterResponse, error) {
+func (c *Client) Register(email, password, username string) (*auth.RegisterResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	req := &auth.RegisterRequest{
 		Email:    email,
 		Password: password,
-		Name:     name,
+		Username: username,
 	}
 
 	resp, err := c.client.Register(ctx, req)
@@ -107,4 +107,3 @@ func (c *Client) GetUserProfile(userID string) (*auth.GetUserProfileResponse, er
 
 	return resp, nil
 }
-

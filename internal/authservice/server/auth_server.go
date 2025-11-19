@@ -31,7 +31,7 @@ func (s *AuthServer) userToProto(user *entity.User) *auth.User {
 	return &auth.User{
 		Id:     user.ID,
 		Email:  user.Email,
-		Name:   user.Name,
+		Username:   user.Username,
 		Role:   user.Role,
 		Active: user.Active,
 		// Password НЕ включается! ✅
@@ -42,22 +42,22 @@ func (s *AuthServer) userToProto(user *entity.User) *auth.User {
 
 func (s *AuthServer) Register(ctx context.Context, req *auth.RegisterRequest) (*auth.RegisterResponse, error) {
 	// Создаем пользователя
-	user, err := s.authService.Register(ctx, req.Email, req.Password, req.Name)
+	user, err := s.authService.Register(ctx, req.Email, req.Password, req.Username)
 	if err != nil {
-		s.Log.Fatal("Error caused after calling func Register from auth service", zap.Error(err))
+		s.Log.Error("Error caused after calling func Register from auth service", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Генерируем токены
 	accessToken, accessExp, err := s.tokenService.GenerateAccessToken(user)
 	if err != nil {
-		s.Log.Fatal("Error caused after calling func GenerateAccessToken from auth service", zap.Error(err))
+		s.Log.Error("Error caused after calling func GenerateAccessToken from auth service", zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
 
 	refreshToken, _, err := s.tokenService.GenerateRefreshToken(user)
 	if err != nil {
-		s.Log.Fatal("Error caused after calling func GenerateRefreshToken from auth service", zap.Error(err))
+		s.Log.Error("Error caused after calling func GenerateRefreshToken from auth service", zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
 
@@ -146,7 +146,7 @@ func (s *AuthServer) ValidateToken(ctx context.Context, req *auth.ValidateTokenR
 func (s *AuthServer) GetUserProfile(ctx context.Context, req *auth.GetUserProfileRequest) (*auth.GetUserProfileResponse, error) {
 	user, err := s.authService.GetUserByID(ctx, req.UserId)
 	if err != nil {
-		s.Log.Fatal("Error caused after calling GetUserByID", zap.Error(err))
+		s.Log.Error("Error caused after calling GetUserByID", zap.Error(err))
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 

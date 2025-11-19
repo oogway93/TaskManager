@@ -17,7 +17,7 @@ var (
 
 type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
-	GetByID(ctx context.Context, userID string) (*entity.User, error)
+	GetByID(ctx context.Context, userID uuid.UUID) (*entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 }
@@ -37,7 +37,7 @@ func NewUserRepository(db *sql.DB, Log *zap.Logger) UserRepository {
 
 func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	query := `
-		INSERT INTO users (id, email, password_hash, name, role, active, created_at, updated_at)
+		INSERT INTO users (id, email, password_hash, username, role, active, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
 	` //TODO: убрать raw sql, использовать gORM
 
@@ -49,7 +49,7 @@ func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 		user.ID,
 		user.Email,
 		user.Password, // уже захэшированный пароль
-		user.Name,
+		user.Username,
 		user.Role,
 		user.Active,
 		user.CreatedAt,
@@ -69,7 +69,7 @@ func (r *userRepository) ExistsByEmail(ctx context.Context, email string) (bool,
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	query := `
-		SELECT id, email, password_hash, name, role, active, created_at, updated_at
+		SELECT id, email, password_hash, username, role, active, created_at, updated_at
 		FROM users 
 		WHERE email = $1
 	`
@@ -79,7 +79,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 		&user.ID,
 		&user.Email,
 		&user.Password,
-		&user.Name,
+		&user.Username,
 		&user.Role,
 		&user.Active,
 		&user.CreatedAt,
@@ -87,20 +87,20 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 	)
 
 	if err == sql.ErrNoRows {
-		r.Log.Fatal("SQL error 'ErrNoRows' caused in repo's GetByEmail", zap.Error(err)) 
+		r.Log.Error("SQL error 'ErrNoRows' caused in repo's GetByEmail", zap.Error(err)) 
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
-		r.Log.Fatal("Error caused in repo's GetByEmail", zap.Error(err)) 
+		r.Log.Error("Error caused in repo's GetByEmail", zap.Error(err)) 
 		return nil, err
 	}
 
 	return &user, nil
 }
 
-func (r *userRepository) GetByID(ctx context.Context, userID string) (*entity.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, userID uuid.UUID) (*entity.User, error) {
 	query := `
-		SELECT id, email, password_hash, name, role, active, created_at, updated_at
+		SELECT id, email, password_hash, username, role, active, created_at, updated_at
 		FROM users 
 		WHERE id = $1 AND active = true
 	`
@@ -110,7 +110,7 @@ func (r *userRepository) GetByID(ctx context.Context, userID string) (*entity.Us
 		&user.ID,
 		&user.Email,
 		&user.Password,
-		&user.Name,
+		&user.Username,
 		&user.Role,
 		&user.Active,
 		&user.CreatedAt,
@@ -118,11 +118,11 @@ func (r *userRepository) GetByID(ctx context.Context, userID string) (*entity.Us
 	)
 
 	if err == sql.ErrNoRows {
-		r.Log.Fatal("SQL error 'ErrNoRows' caused in repo's GetByID", zap.Error(err)) 
+		r.Log.Error("SQL error 'ErrNoRows' caused in repo's GetByID", zap.Error(err)) 
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
-		r.Log.Fatal("Error caused in repo's GetByID", zap.Error(err)) 
+		r.Log.Error("Error caused in repo's GetByID", zap.Error(err)) 
 		return nil, err
 	}
 

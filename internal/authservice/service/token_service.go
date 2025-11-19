@@ -20,6 +20,7 @@ var (
 type TokenClaims struct {
 	UserID    string `json:"user_id"`
 	Email     string `json:"email"`
+	Username  string `json:"username"`
 	Role      string `json:"role"`
 	TokenType string `json:"token_type"` // "access" или "refresh"
 	jwt.RegisteredClaims
@@ -56,6 +57,7 @@ func (s *tokenService) GenerateAccessToken(user *entity.User) (string, time.Time
 	claims := TokenClaims{
 		UserID:    user.ID,
 		Email:     user.Email,
+		Username:  user.Username,
 		Role:      user.Role,
 		TokenType: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -85,6 +87,7 @@ func (s *tokenService) GenerateRefreshToken(user *entity.User) (string, time.Tim
 	claims := TokenClaims{
 		UserID:    user.ID,
 		Email:     user.Email,
+		Username:  user.Username,
 		Role:      user.Role,
 		TokenType: "refresh",
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -112,7 +115,7 @@ func (s *tokenService) ValidateToken(tokenString string) (*TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Проверяем алгоритм подписи
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			s.Log.Fatal("Error caused after calling func ParseWithClaims in tokenservice")
+			s.Log.Error("Error caused after calling func ParseWithClaims in tokenservice")
 			return nil, ErrInvalidToken
 		}
 		return []byte(s.cfg.JWT.Secret), nil
@@ -122,7 +125,7 @@ func (s *tokenService) ValidateToken(tokenString string) (*TokenClaims, error) {
 		var validationErr *jwt.ValidationError
 		if errors.As(err, &validationErr) {
 			if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
-				s.Log.Fatal("Error caused after calling func ParseWithClaims in tokenservice", zap.Error(err))
+				s.Log.Error("Error caused after calling func ParseWithClaims in tokenservice", zap.Error(err))
 				return nil, ErrExpiredToken
 			}
 		}
@@ -130,7 +133,7 @@ func (s *tokenService) ValidateToken(tokenString string) (*TokenClaims, error) {
 	}
 
 	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
-		s.Log.Fatal("Error caused after calling func Claims in tokenservice", zap.Error(err))
+		s.Log.Error("Error caused after calling func Claims in tokenservice", zap.Error(err))
 		return claims, nil
 	}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/oogway93/taskmanager/internal/authservice/repository"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/google/uuid"
 )
 
 var (
@@ -39,11 +40,11 @@ func NewAuthService(userRepo repository.UserRepository, tokenService TokenServic
 	}
 }
 
-func (s *authService) Register(ctx context.Context, email, password, name string) (*entity.User, error) {
+func (s *authService) Register(ctx context.Context, email, password, username string) (*entity.User, error) {
 	// Проверяем существует ли пользователь
 	existing, err := s.userRepo.GetByEmail(ctx, email)
-	if existing != nil || err != nil {
-		s.Log.Fatal("Error caused after trying repo's GetByEmail", zap.Error(err))
+	if existing != nil {
+		s.Log.Error("Error caused after trying repo's GetByEmail", zap.Error(err))
 		return nil, ErrUserAlreadyExists
 	}
 
@@ -51,7 +52,7 @@ func (s *authService) Register(ctx context.Context, email, password, name string
 	user := &entity.User{
 		Email:     email,
 		Password:  password,
-		Name:      name,
+		Username:  username,
 		Role:      "user",
 		Active:    true,
 		CreatedAt: time.Now(),
@@ -61,14 +62,14 @@ func (s *authService) Register(ctx context.Context, email, password, name string
 	// Хэшируем пароль
 	hashedPassword, err := hashPassword(user.Password)
 	if err != nil {
-		s.Log.Fatal("Error caused after calling the func HashPassword", zap.Error(err))
+		s.Log.Error("Error caused after calling the func HashPassword", zap.Error(err))
 		return nil, err
 	}
 	user.Password = string(hashedPassword)
 
 	// Сохраняем в БД
 	if err := s.userRepo.Create(ctx, user); err != nil {
-		s.Log.Fatal("Error caused after trying repo's Create in Auth Service", zap.Error(err))
+		s.Log.Error("Error caused after trying repo's Create in Auth Service", zap.Error(err))
 		return nil, err
 	}
 
@@ -96,7 +97,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (*entit
 	}
 
 	// Обновляем время последнего входа (опционально)
-	user.UpdatedAt = time.Now()
+	// user.UpdatedAt = time.Now()
 	// if err := s.userRepo.Update(ctx, user); err != nil {
 	// 	// Логируем ошибку, но не прерываем вход
 	// 	// logger.WithError(err).Warn("Failed to update last login time")
@@ -111,7 +112,11 @@ func (s *authService) ValidateToken(token string) (*TokenClaims, error) {
 }
 
 func (s *authService) GetUserByID(ctx context.Context, userID string) (*entity.User, error) {
-	return s.userRepo.GetByID(ctx, userID)
+	uuidUserID, err := uuid.Parse(userID)
+	if err != nil {
+		s.Log.Error("Failed error in trying parse userID string's type to UUID", zap.Error(err))
+	}
+	return s.userRepo.GetByID(ctx, uuidUserID)
 }
 
 func hashPassword(userPassword string) ([]byte, error) {

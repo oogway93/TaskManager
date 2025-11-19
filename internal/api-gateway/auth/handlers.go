@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -34,7 +33,7 @@ func (h *Handler) Register(c *gin.Context) {
 
 	// Валидация входных данных
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Println("Invalid registration request", err)
+		h.Log.Error("Invalid registration request", zap.Error(err))
 
 		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
 			Error:   "VALIDATION_ERROR",
@@ -43,32 +42,19 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	// // Дополнительная валидация
-	// if err := h.validateRegisterRequest(&req); err != nil {
-	// 	c.JSON(http.StatusBadRequest, ErrorResponse{
-	// 		Error:   "VALIDATION_ERROR",
-	// 		Message: err.Error(),
-	// 	})
-	// 	return
-	// }
-
 	// Вызов gRPC сервиса аутентификации
-	resp, err := h.AuthClient.Register(req.Email, req.Password, req.Name)
+	resp, err := h.AuthClient.Register(req.Email, req.Password, req.Username)
 	if err != nil {
-		h.Log.Fatal("Error caused after calling func Register in api-gateway auth's handlers", zap.Error(err))
+		h.Log.Error("Error caused after calling func Register in api-gateway auth's handlers", zap.Error(err))
 		return
 	}
 
 	// Преобразование gRPC ответа в HTTP ответ
 	response := entity.RegisterResponse{
-		AccessToken:  resp.AccessToken, //TODO:убрать вывод обратно пользователю и генерацию токена при регистрации
-		RefreshToken: resp.RefreshToken,
-		TokenType:    resp.TokenType,
-		ExpiresAt:    resp.ExpiresAt.AsTime(),
+		Status: "User Registered",
 		User: entity.UserResponse{
-			ID:        resp.User.Id,
 			Email:     resp.User.Email,
-			Name:      resp.User.Name,
+			Username:  resp.User.Username,
 			Role:      resp.User.Role,
 			CreatedAt: resp.User.CreatedAt.AsTime(),
 		},
@@ -103,7 +89,7 @@ func (h *Handler) Login(c *gin.Context) {
 		User: entity.UserResponse{
 			ID:        resp.User.Id,
 			Email:     resp.User.Email,
-			Name:      resp.User.Name,
+			Username:  resp.User.Username,
 			Role:      resp.User.Role,
 			CreatedAt: resp.User.CreatedAt.AsTime(),
 		},
@@ -131,7 +117,7 @@ func (h *Handler) GetProfile(c *gin.Context) {
 	response := entity.UserResponse{
 		ID:        resp.User.Id,
 		Email:     resp.User.Email,
-		Name:      resp.User.Name,
+		Username:  resp.User.Username,
 		Role:      resp.User.Role,
 		CreatedAt: resp.User.CreatedAt.AsTime(),
 	}

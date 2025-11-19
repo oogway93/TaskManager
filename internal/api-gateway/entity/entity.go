@@ -7,7 +7,7 @@ import (
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
-	Name     string `json:"name" binding:"required,min=2,max=100"`
+	Username string `json:"username" binding:"required,min=2,max=100"`
 }
 
 type LoginRequest struct {
@@ -26,7 +26,7 @@ type LoginResponse struct {
 type UserInfo struct {
 	ID        string    `json:"id"`
 	Email     string    `json:"email"`
-	Name      string    `json:"name"`
+	Username  string    `json:"username"`
 	Role      string    `json:"role"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -35,7 +35,7 @@ type User struct {
 	ID        string
 	Email     string
 	Password  string
-	Name      string
+	Username  string
 	Role      string
 	Active    bool
 	CreatedAt time.Time
@@ -43,17 +43,18 @@ type User struct {
 }
 
 type RegisterResponse struct {
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
-	TokenType    string       `json:"token_type"`
-	ExpiresAt    time.Time    `json:"expires_at"`
-	User         UserResponse `json:"user"`
+	// AccessToken  string       `json:"access_token"`
+	// RefreshToken string       `json:"refresh_token"`
+	// TokenType    string       `json:"token_type"`
+	// ExpiresAt    time.Time    `json:"expires_at"`
+	Status string       `json:"status"`
+	User   UserResponse `json:"user"`
 }
 
 type UserResponse struct {
-	ID        string    `json:"id"`
+	ID        string    `json:"id,omitempty"`
 	Email     string    `json:"email"`
-	Name      string    `json:"name"`
+	Username  string    `json:"username"`
 	Role      string    `json:"role"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -71,19 +72,20 @@ type Task struct {
 	Priority    string
 	Status      string
 	Tags        []string
-	User_id     string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DueDate     time.Time
-}
-type TaskCreate struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Priority    string   `json:"priority"` //TODO:сделать enum, чтобы проверялось правильность введения
-	Status      string   `json:"status"`
-	Tags        []string `json:"tags"`
 	User_id     string
 }
+
+// type TaskCreate struct {
+// 	Title       string   `json:"title"`
+// 	Description string   `json:"description"`
+// 	Priority    string   `json:"priority"` //TODO:сделать enum, чтобы проверялось правильность введения
+// 	Status      string   `json:"status"`
+// 	Tags        []string `json:"tags"`
+// 	User_id     string
+// }
 
 type TaskRequest struct {
 	Title       string   `json:"title"`
@@ -98,11 +100,22 @@ type TaskResponse struct {
 	Task *Task `json:"task"`
 }
 
+type TaskListData struct {
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Priority    string   `json:"priority"` //TODO:сделать enum, чтобы проверялось правильность введения
+	Status      string   `json:"status"`
+	Tags        []string `json:"tags"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
 type TaskListResponse struct {
-	Tasks []*Task `json:"tasks"`
-	Total int32  `json:"total"`
+	Tasks    []*TaskListData `json:"tasks"`
+	Total    int32           `json:"total"`
+	Username string          `json:"username"`
 }
 
 type GetTaskRequest struct {
-	TaskId string 
+	TaskId string
 }
