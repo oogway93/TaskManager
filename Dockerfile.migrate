@@ -1,0 +1,7 @@
+FROM migrate/migrate
+
+# Копируем миграции внутрь образа
+COPY migrations /migrations
+
+# Убедимся что права правильные
+RUN chmod -R 755 /migrations

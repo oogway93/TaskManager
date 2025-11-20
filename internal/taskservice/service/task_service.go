@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/gofrs/uuid/v5"
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 	"github.com/oogway93/taskmanager/internal/taskservice/repository"
 	"go.uber.org/zap"
 )

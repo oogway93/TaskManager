@@ -7,7 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/oogway93/taskmanager/config"
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 	"go.uber.org/zap"
 )
 

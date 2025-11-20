@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 	"github.com/oogway93/taskmanager/internal/authservice/repository"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"

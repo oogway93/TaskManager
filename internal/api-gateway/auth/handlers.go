@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oogway93/taskmanager/config"
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 	"go.uber.org/zap"
 )
 

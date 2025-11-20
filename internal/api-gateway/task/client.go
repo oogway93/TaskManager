@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/oogway93/taskmanager/gen/task"
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

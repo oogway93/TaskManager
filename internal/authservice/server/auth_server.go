@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/oogway93/taskmanager/gen/auth"
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 	"github.com/oogway93/taskmanager/internal/authservice/service"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"

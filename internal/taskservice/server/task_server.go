@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/oogway93/taskmanager/gen/task"
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 	"github.com/oogway93/taskmanager/internal/taskservice/service"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"

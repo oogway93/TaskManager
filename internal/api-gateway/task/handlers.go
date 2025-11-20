@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	AuthHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 )
 
 type Handler struct {

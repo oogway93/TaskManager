@@ -1,0 +1,72 @@
+services:
+  api-gateway:
+    container_name: api-gateway 
+    build:
+      dockerfile: ./Dockerfile.api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    restart: on-failure
+
+  taskservice:
+    container_name: taskservice 
+    build:
+      dockerfile: ./Dockerfile.task
+    ports:
+      - "50052:50052"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    restart: on-failure
+    
+  authservice:
+    container_name: authservice 
+    build:
+      dockerfile: ./Dockerfile.auth
+    ports:
+      - "50051:50051"
+    env_file:
+      - .env
+    depends_on:
+      - postgres 
+    restart: on-failure
+
+  migrate:
+    container_name: migrate 
+    build:
+      dockerfile: ./Dockerfile.migrate
+    command: 
+      - "-path=/migrations"
+      - "-database=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable"
+      - "up"
+    depends_on:
+      - postgres 
+    restart: on-failure
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data 
+    environment:
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
+    # networks:
+    #   - db_net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d ${DB_NAME} -U ${DB_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    env_file:
+      - ".env"
+
+volumes:
+  postgres_data:

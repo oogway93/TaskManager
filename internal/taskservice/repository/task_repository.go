@@ -8,7 +8,7 @@ import (
 
 	"github.com/gofrs/uuid/v5"
 	"github.com/lib/pq"
-	"github.com/oogway93/taskmanager/internal/api-gateway/entity"
+	"github.com/oogway93/taskmanager/internal/entity"
 	"go.uber.org/zap"
 )
 
