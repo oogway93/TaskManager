@@ -13,11 +13,12 @@ import (
 	"github.com/oogway93/taskmanager/config"
 	"github.com/oogway93/taskmanager/internal/api-gateway"
 	"github.com/oogway93/taskmanager/logger"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
 	AuthHandler "github.com/oogway93/taskmanager/internal/api-gateway/auth"
-	TaskHandler "github.com/oogway93/taskmanager/internal/api-gateway/task"
 	healthHandler "github.com/oogway93/taskmanager/internal/api-gateway/health"
+	TaskHandler "github.com/oogway93/taskmanager/internal/api-gateway/task"
 )
 
 func main() {
@@ -42,11 +43,14 @@ func main() {
 		Log.Fatal("Failed to create task handler", zap.Error(err))
 	}
 	defer taskHandler.Close()
+	middlewares.PrometheusInit()
 	router := gin.Default()
 	router.Use(cors.Default())
 
-	router.Use(middlewares.JWTMiddleware(jwtConfig))
+	router.Use(middlewares.PrometheusMiddleware())
 
+	router.Use(middlewares.JWTMiddleware(jwtConfig))
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	public := router.Group("/api/v1")
 	{
 		public.GET("/health", healthHandler.HealthCheck)

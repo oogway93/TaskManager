@@ -10,6 +10,8 @@ services:
     depends_on:
       - postgres
     restart: on-failure
+    networks:
+      - go-network
 
   taskservice:
     container_name: taskservice 
@@ -22,6 +24,8 @@ services:
     depends_on:
       - postgres
     restart: on-failure
+    networks:
+      - go-network
     
   authservice:
     container_name: authservice 
@@ -34,6 +38,8 @@ services:
     depends_on:
       - postgres 
     restart: on-failure
+    networks:
+      - go-network
 
   migrate:
     container_name: migrate 
@@ -46,6 +52,8 @@ services:
     depends_on:
       - postgres 
     restart: on-failure
+    networks:
+      - go-network
 
   postgres:
     image: postgres:15
@@ -67,6 +75,45 @@ services:
       retries: 3
     env_file:
       - ".env"
+    networks:
+      - go-network
+
+  prometheus:
+    container_name: prom
+    build:
+      dockerfile: ./Dockerfile.prom
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--web.external-url=http://localhost:9090'
+    depends_on:
+      - api-gateway 
+    restart: on-failure
+    networks:
+      - go-network
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./internal/infrastructure/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+    - prometheus
+    networks:
+      - go-network
 
 volumes:
   postgres_data:
+  grafana_data:
+
+networks:
+  go-network:
+    driver: bridge

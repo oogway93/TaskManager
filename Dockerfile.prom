@@ -1,0 +1,8 @@
+FROM prom/prometheus
+
+# Копируем миграции внутрь образа
+COPY internal/infrastructure/prometheus /prometheus
+
+# Убедимся что права правильные
+# RUN chmod -R 755 internal/infrastructure/prometheus
+

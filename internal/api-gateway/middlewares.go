@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oogway93/taskmanager/config"
+	"github.com/prometheus/client_golang/prometheus"
+	// "github.com/oogway93/taskmanager/internal/metrics"
+	// "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type AuthUser struct {
@@ -192,6 +196,156 @@ func GetUserFromContext(c *gin.Context) (*AuthUser, error) {
 
 	return authUser, nil
 }
+
+func PrometheusInit() {
+	// Регистрируем метрики
+	prometheus.MustRegister(
+		HttpRequestsTotal,
+		HttpRequestDuration,
+		HttpRequestsInFlight,
+		AuthRegistrationDuration,
+		AuthRegistrations,
+		GrpcCallDuration,
+		// ordersProcessed,
+		// activeUsers,
+		DbQueryDuration,
+	)
+}
+
+var (
+	HttpRequestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests",
+		},
+		[]string{"method", "path", "status", "handler"},
+	)
+
+	HttpRequestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "Duration of HTTP requests",
+			Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5},
+		},
+		[]string{"method", "path", "status", "handler"},
+	)
+
+	HttpRequestsInFlight = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "http_requests_in_flight",
+			Help: "Current number of HTTP requests being processed",
+		},
+	)
+// // Бизнес-метрики
+	ordersProcessed = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "orders_processed_total",
+			Help: "Total processed orders",
+		},
+		[]string{"type", "status"},
+	)
+
+	activeUsers = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "active_users",
+			Help: "Current active users",
+		},
+	)
+
+	// Метрики базы данных
+	DbQueryDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "db_query_duration_seconds",
+			Help:    "Duration of database queries",
+			Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1},
+		},
+		[]string{"operation", "table"},
+	)
+    AuthRegistrations = prometheus.NewCounterVec(
+        prometheus.CounterOpts{
+            Name: "auth_registrations_total",
+            Help: "Total number of user registrations",
+        },
+        []string{"status"}, // "success", "validation_error", "grpc_error"
+    )
+
+    AuthRegistrationDuration = prometheus.NewHistogramVec(
+        prometheus.HistogramOpts{
+            Name:    "auth_registration_duration_seconds",
+            Help:    "Duration of registration requests",
+            Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2},
+        },
+        []string{"status"},
+    )
+
+    GrpcCallDuration = prometheus.NewHistogramVec(
+        prometheus.HistogramOpts{
+            Name:    "grpc_call_duration_seconds",
+            Help:    "Duration of gRPC calls",
+            Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1},
+        },
+        []string{"service", "method"},
+    )
+)
+
+// Метрики для бизнес-логики
+func RecordOrder(orderType, status string) {
+	ordersProcessed.WithLabelValues(orderType, status).Inc()
+}
+
+func SetActiveUsers(count int) {
+	activeUsers.Set(float64(count))
+}
+
+func RecordDBQuery(operation, table string, duration time.Duration) {
+	DbQueryDuration.WithLabelValues(operation, table).Observe(duration.Seconds())
+}
+
+// Вспомогательная функция для измерения gRPC вызовов
+// func RecordGRPCCall(service, method string, duration time.Duration, err error) {
+//     status := "success"
+//     if err != nil {
+//         status = "error"
+//     }
+//     GrpcCallDuration.WithLabelValues(service, method).Observe(duration.Seconds())
+// }
+
+// PrometheusMiddleware для Gin
+func PrometheusMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Пропускаем метрики эндпоинт
+		if c.Request.URL.Path == "/metrics" {
+			c.Next()
+			return
+		}
+
+		start := time.Now()
+		path := c.FullPath()
+		
+		// Если путь не определен (404), используем raw path
+		if path == "" {
+			path = c.Request.URL.Path
+		}
+
+		// Увеличиваем счетчик активных запросов
+		HttpRequestsInFlight.Inc()
+		defer HttpRequestsInFlight.Dec()
+
+		// Обрабатываем запрос
+		c.Next()
+
+		// Получаем статус ответа
+		status := strconv.Itoa(c.Writer.Status())
+		method := c.Request.Method
+		
+		// Регистрируем метрики
+		duration := time.Since(start).Seconds()
+		HttpRequestsTotal.WithLabelValues(method, path, status, c.HandlerName()).Inc()
+		HttpRequestDuration.WithLabelValues(method, path, status, c.HandlerName()).Observe(duration)
+	}
+}
+
+
 
 // ==================== ROLE-BASED ACCESS CONTROL ====================
 

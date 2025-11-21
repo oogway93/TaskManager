@@ -2,9 +2,11 @@ package auth
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oogway93/taskmanager/config"
+	middlewares "github.com/oogway93/taskmanager/internal/api-gateway"
 	"github.com/oogway93/taskmanager/internal/entity"
 	"go.uber.org/zap"
 )
@@ -29,11 +31,21 @@ func NewHandler(cfg *config.Config, Log *zap.Logger) (*Handler, error) {
 }
 
 func (h *Handler) Register(c *gin.Context) {
+	start := time.Now()
+    var status string = "success" // по умолчанию
+    
+    // В конце функции записываем метрики
+    defer func() {
+        duration := time.Since(start)
+        middlewares.AuthRegistrationDuration.WithLabelValues(status).Observe(duration.Seconds())
+        middlewares.AuthRegistrations.WithLabelValues(status).Inc()
+    }()
 	var req entity.RegisterRequest
 
 	// Валидация входных данных
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.Log.Error("Invalid registration request", zap.Error(err))
+		status = "validation_error"
 
 		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
 			Error:   "VALIDATION_ERROR",
