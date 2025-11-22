@@ -43,6 +43,7 @@ func main() {
 		Log.Fatal("Failed to create task handler", zap.Error(err))
 	}
 	defer taskHandler.Close()
+
 	middlewares.PrometheusInit()
 	router := gin.Default()
 	router.Use(cors.Default())

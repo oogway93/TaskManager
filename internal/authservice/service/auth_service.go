@@ -2,14 +2,17 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"log"
 	"time"
 
-	"github.com/oogway93/taskmanager/internal/entity"
+	"github.com/google/uuid"
 	"github.com/oogway93/taskmanager/internal/authservice/repository"
+	"github.com/oogway93/taskmanager/internal/entity"
+	"github.com/streadway/amqp"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"github.com/google/uuid"
 )
 
 var (
@@ -72,6 +75,7 @@ func (s *authService) Register(ctx context.Context, email, password, username st
 		s.Log.Error("Error caused after trying repo's Create in Auth Service", zap.Error(err))
 		return nil, err
 	}
+	sendVerificationEmail(user.Email)
 
 	return user, nil
 }
@@ -130,4 +134,53 @@ func hashPassword(userPassword string) ([]byte, error) {
 func checkPassword(hashedPassword, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	return err == nil
+}
+func sendVerificationEmail(email string) {
+	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+	if err != nil {
+		log.Fatalf("Ошибка подключения к RabbitMQ: %s", err)
+	}
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	if err != nil {
+		log.Fatalf("Ошибка открытия канала: %s", err)
+	}
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		"email_greetings", // name
+		true,              // durable
+		false,             // delete when unused
+		false,             // exclusive
+		false,             // no-wait
+		nil,               // arguments
+	)
+	if err != nil {
+		log.Fatalf("Ошибка объявления очереди: %s", err)
+	}
+
+	message := entity.EmailMessage{
+		EmailTo: email,
+	}
+
+	body, err := json.Marshal(message)
+	if err != nil {
+		log.Fatalf("Ошибка сериализации сообщения: %s", err)
+	}
+
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		})
+	if err != nil {
+		log.Fatalf("Ошибка отправки сообщения: %s", err)
+	}
+
+	log.Printf("Отправлен email с кодом для: %s", email)
 }

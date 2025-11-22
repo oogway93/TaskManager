@@ -15,6 +15,7 @@ type Config struct {
 	App    App
 	JWT    JWTConfig
 	DB     DBConfig
+	Email  EmailConfig
 }
 
 type App struct {
@@ -41,6 +42,11 @@ type DBConfig struct {
 	DBName   string
 }
 
+type EmailConfig struct {
+	EmailFrom string
+	EmailPass string
+}
+
 func Load() *Config {
 	err := godotenv.Load()
 	if err != nil {
@@ -63,8 +69,12 @@ func Load() *Config {
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnvInt("DB_PORT", 5432),
 			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", "password"), 
+			Password: getEnv("DB_PASSWORD", "password"),
 			DBName:   getEnv("DB_NAME", "taskmanager"),
+		},
+		EmailConfig{
+			EmailFrom: getEnv("SMTP_FROM_EMAIL", ""),
+			EmailPass: getEnv("SMTP_FROM_PASS", ""),
 		},
 	}
 }

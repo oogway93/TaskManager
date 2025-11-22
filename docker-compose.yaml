@@ -37,9 +37,22 @@ services:
       - .env
     depends_on:
       - postgres 
+      - rabbitmq
     restart: on-failure
     networks:
       - go-network
+
+  rabbitmqservice:
+    container_name: rabbitmqservice
+    build:
+      dockerfile: ./Dockerfile.rabbitmq
+    ports:
+      - "50053:50053"
+    networks:
+      - go-network
+    depends_on:
+      - rabbitmq 
+    restart: on-failure
 
   migrate:
     container_name: migrate 
@@ -66,8 +79,6 @@ services:
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
       POSTGRES_DB: "${DB_NAME}"
-    # networks:
-    #   - db_net
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -d ${DB_NAME} -U ${DB_USER}" ]
       interval: 10s
@@ -110,9 +121,33 @@ services:
     networks:
       - go-network
 
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.10.7-management
+    hostname: rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - 15672:15672
+      - 5672:5672
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - go-network
+
+
 volumes:
   postgres_data:
   grafana_data:
+  rabbitmq_data:
 
 networks:
   go-network:

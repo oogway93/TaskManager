@@ -1,0 +1,19 @@
+FROM golang:1.24-alpine
+
+WORKDIR app/
+
+COPY go.mod go.sum ./
+
+RUN go get github.com/streadway/amqp
+
+COPY cmd/rabbitmq/ ./cmd/rabbitmq/
+COPY internal/entity/ ./internal/entity/
+COPY .env ./.env
+COPY config/ ./config/
+COPY logger/ ./logger/
+
+RUN go build -o rbtmq cmd/rabbitmq/main.go
+
+EXPOSE 50053
+
+CMD ["./rbtmq"]

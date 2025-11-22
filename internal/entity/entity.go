@@ -119,3 +119,9 @@ type TaskListResponse struct {
 type GetTaskRequest struct {
 	TaskId string
 }
+
+type EmailMessage struct {
+	EmailTo string `json:"email"`
+}
+
+
